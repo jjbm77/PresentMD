@@ -1,0 +1,435 @@
+
+{{ font_face }}
+{{ theme_css }}
+
+/* Custom Framework Styles (UX, Lightbox, Arrows, Animations, Footer/Logo) */
+.slide-counter {
+  transition: opacity 0.5s ease !important;
+  opacity: 1;
+}
+.slide-counter.fade-out {
+  opacity: 0 !important;
+}
+
+/* Slide Footer & Logo — flows as 3rd zone in the CSS Grid */
+.slide-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px 12px;
+  border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.15));
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+  pointer-events: none;
+}
+.footer-logo {
+  height: 36px;
+  max-width: 160px;
+  object-fit: contain;
+}
+.footer-text {
+  flex-grow: 1;
+  text-align: left;
+}
+
+/* Title Layout Logo and Footer */
+.title-logo-container {
+  margin-bottom: 20px;
+  text-align: left;
+}
+.title-logo-container.logo-bottom {
+  text-align: center;
+}
+.title-logo {
+  height: 64px;
+  max-width: 240px;
+  object-fit: contain;
+}
+.title-footer {
+  position: absolute;
+  bottom: 40px;
+  left: 80px;
+  right: 80px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: left;
+}
+
+/* Bottom Controls container in the bottom right corner */
+.bottom-controls {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  opacity: 1;
+}
+.bottom-controls.fade-out {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+.nav-arrows {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-arrow-btn {
+  background: rgba(26, 26, 46, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  border-radius: 50% !important;
+  width: 40px !important;
+  height: 40px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.2s, color 0.2s, transform 0.2s !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.nav-arrow-btn:hover {
+  background: var(--accent-primary) !important;
+  border-color: var(--accent-primary) !important;
+  color: #fff !important;
+  transform: scale(1.05) !important;
+}
+
+.nav-arrow-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.slide-counter {
+  position: static !important; /* Override theme position */
+  font-family: var(--font-mono) !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  color: #ffffff !important;
+  background: rgba(26, 26, 46, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  padding: 0 14px !important;
+  border-radius: 20px !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 40px !important;
+  min-width: 60px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  z-index: auto !important;
+  opacity: 1 !important; /* Handled by bottom-controls container opacity */
+  transition: none !important;
+}
+
+
+/* SVG Lightbox Overlay */
+.lightbox-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(241, 245, 249, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.lightbox-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+.lightbox-content {
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lightbox-content svg {
+  width: auto;
+  height: auto;
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  cursor: grab;
+}
+.lightbox-content svg:active {
+  cursor: grabbing;
+}
+.lightbox-controls {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 8px 16px;
+  border-radius: 30px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 2010;
+}
+.lightbox-btn {
+  background: transparent;
+  border: none;
+  color: #0f172a;
+  font-size: 1.2rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.1s, color 0.2s;
+}
+.lightbox-btn:hover {
+  background: rgba(15, 23, 42, 0.08);
+  transform: scale(1.1);
+}
+.lightbox-btn:active {
+  transform: scale(0.95);
+}
+.lightbox-close {
+  position: absolute;
+  top: 20px; right: 20px;
+  background: none;
+  border: none;
+  color: #0f172a;
+  font-size: 2rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 2010;
+}
+.lightbox-close:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Diagram Cursor Hover Hint */
+.diagram-container svg {
+  cursor: zoom-in;
+  transition: transform 0.2s ease;
+}
+.diagram-container svg:hover {
+  transform: scale(1.01);
+}
+
+/* Entry Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.has-animations .slide.active .kpi-card {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.has-animations .slide.active .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+.has-animations .slide.active .kpi-card:nth-child(2) { animation-delay: 0.2s; }
+.has-animations .slide.active .kpi-card:nth-child(3) { animation-delay: 0.3s; }
+.has-animations .slide.active .kpi-card:nth-child(4) { animation-delay: 0.4s; }
+
+.has-animations .slide.active .timeline-phase {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.has-animations .slide.active .timeline-phase:nth-child(1) { animation-delay: 0.1s; }
+.has-animations .slide.active .timeline-phase:nth-child(2) { animation-delay: 0.2s; }
+.has-animations .slide.active .timeline-phase:nth-child(3) { animation-delay: 0.3s; }
+.has-animations .slide.active .timeline-phase:nth-child(4) { animation-delay: 0.4s; }
+
+.has-animations .slide.active .info-box {
+  animation: fadeInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.has-animations .slide.active .info-box:nth-child(1) { animation-delay: 0.05s; }
+.has-animations .slide.active .info-box:nth-child(2) { animation-delay: 0.10s; }
+.has-animations .slide.active .info-box:nth-child(3) { animation-delay: 0.15s; }
+.has-animations .slide.active .info-box:nth-child(4) { animation-delay: 0.20s; }
+
+.has-animations .bar-fill {
+  width: 0% !important;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.has-animations .slide.active .bar-fill {
+  width: var(--target-width) !important;
+}
+
+/* Fallback Diagram Box Styles */
+.diagram-container.fallback {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 15px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.diagram-fallback-header {
+  background: rgba(15, 23, 42, 0.8);
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+}
+.diagram-fallback-header .diagram-title {
+  font-weight: 600;
+  color: #e2e8f0;
+  flex-grow: 1;
+  margin-left: 10px;
+}
+.diagram-fallback-header .diagram-badge {
+  background: var(--accent-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.diagram-fallback-code {
+  margin: 0;
+  padding: 15px;
+  max-height: 250px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  background: rgba(15, 23, 42, 0.4);
+  color: #cbd5e1;
+  text-align: left;
+}
+.diagram-fallback-footer {
+  background: rgba(15, 23, 42, 0.4);
+  padding: 8px 15px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: left;
+}
+
+/* Sidebar Hover Trigger */
+.sidebar-trigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 100vh;
+  z-index: 998;
+  background: transparent;
+}
+.sidebar-trigger:hover + .toc-sidebar,
+.toc-sidebar:hover {
+  left: 0 !important;
+}
+
+/* TOC Separator and Annex styles */
+.toc-separator {
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.4));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  margin-top: 12px;
+}
+.toc-annex {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.toc-annex-badge {
+  font-family: var(--font-mono) !important;
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--accent-primary) !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.fs-btn {
+  background: rgba(26, 26, 46, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  border-radius: 50% !important;
+  width: 40px !important;
+  height: 40px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.2s, color 0.2s, transform 0.2s !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 1.1rem !important;
+}
+.fs-btn:hover {
+  background: var(--accent-primary) !important;
+  border-color: var(--accent-primary) !important;
+  color: #fff !important;
+  transform: scale(1.05) !important;
+}
+.fs-btn:active {
+  transform: scale(0.95) !important;
+}
+.fs-btn.active {
+  background: var(--accent-primary) !important;
+  border-color: var(--accent-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px var(--accent-primary) !important;
+}
+
+
+/* Background Image Overlay Style */
+.slide-bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.15; /* Default opacity if not overridden inline */
+}
+  

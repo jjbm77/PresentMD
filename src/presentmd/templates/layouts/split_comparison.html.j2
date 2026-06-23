@@ -1,0 +1,31 @@
+<section class="slide layout-standard layout-split-comparison" data-index="{{ index }}" id="{{ slide_id }}" data-id="{{ slide_id }}"{% if speaker_notes %} data-notes="{{ speaker_notes | escape }}"{% endif %}>
+  {% if bg_image %}
+  <div class="slide-bg-overlay" style="background-image: url('{{ bg_image.src }}'); {% if bg_image.opacity %}opacity: {{ bg_image.opacity }};{% endif %}"></div>
+  {% endif %}
+  <div class="slide-header">
+    {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
+    {% if heading %}<h1 class="slide-h1">{{ heading }}</h1>{% endif %}
+    {% if subtitle %}<h2 class="slide-h2">{{ subtitle }}</h2>{% endif %}
+  </div>
+  <div class="slide-body">
+    <div class="pc-left">
+      {% for el in left_elements %}
+      {{ el | safe }}
+      {% endfor %}
+    </div>
+    <div class="pc-center">
+      <div class="vs-badge">{{ center_badge|default("VS") }}</div>
+    </div>
+    <div class="pc-right">
+      {% for el in right_elements %}
+      {{ el | safe }}
+      {% endfor %}
+    </div>
+  </div>
+  {% if footer_text or logo %}
+  <div class="slide-footer">
+    {% if footer_text %}<span class="footer-text">{{ footer_text }}</span>{% endif %}
+    {% if logo %}<span class="footer-logo"></span>{% endif %}
+  </div>
+  {% endif %}
+</section>

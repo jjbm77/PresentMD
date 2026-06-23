@@ -1,0 +1,24 @@
+<section class="slide layout-title" data-index="{{ index }}" id="{{ slide_id }}" data-id="{{ slide_id }}"{% if speaker_notes %} data-notes="{{ speaker_notes | escape }}"{% endif %}>
+  {% if bg_image %}
+  <div class="slide-bg-overlay" style="background-image: url('{{ bg_image.src }}'); {% if bg_image.opacity %}opacity: {{ bg_image.opacity }};{% endif %}"></div>
+  {% endif %}
+  {% if logo and logo_position != 'bottom' %}
+  <div class="title-logo-container" style="position: absolute; top: 40px; left: 0; right: 0; text-align: center;">
+    <span class="title-logo"></span>
+  </div>
+  {% endif %}
+  <div class="slide-body" style="position: relative; z-index: 2;">
+    {% for el in elements %}
+    {{ el | safe }}
+    {% endfor %}
+  </div>
+  <div class="accent-line"></div>
+  {% if logo and logo_position == 'bottom' %}
+  <div class="title-logo-container logo-bottom" style="position: absolute; bottom: 60px; left: 0; right: 0; text-align: center;">
+    <span class="title-logo"></span>
+  </div>
+  {% endif %}
+  {% if footer_text %}
+  <div class="title-footer" style="position: absolute; bottom: 20px; left: 0; right: 0; text-align: center;">{{ footer_text }}</div>
+  {% endif %}
+</section>
