@@ -45,8 +45,8 @@ _KPI_ITEM_RE = re.compile(
     r"^\-\s*\[(.+?)\]\s*(.+?)(?:\s*\{status:\s*(\w+)\})?\s*$"
 )
 _PROGRESS_ITEM_RE = re.compile(
-     r"^\-\s*(.+?):\s*(\d+)%(?:\s*\{color:\s*([\"\']?\w+[\"\'])\})?\s*$"
- )
+    r"^\-\s*(.+?):\s*(\d+)%(?:\s*\{color:\s*([\"']?[\w-]+[\"']?)\})?\s*$"
+)
 _INFO_ITEM_RE = re.compile(r"^\-\s*(.+?):\s*(.+)$")
 
 def _parse_item_options(options_str: str) -> dict:

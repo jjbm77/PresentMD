@@ -1,469 +1,308 @@
 # Documento de Arquitectura Técnica y Diseño de Implementación: PresentMD
-**Versión:** 1.0 (Release Candidate)  
-**Autor:** Arquitecto de Software Senior & Escritor Técnico Principal  
-**Fecha:** Junio 2026  
+
+**Versión:** 1.1 (Actualizado de acuerdo al código fuente real)  
+**Autor:** Principal Software Architect & Technical Writer  
+**Estado:** Confirmado por Auditoría de Código  
 
 ---
 
-## 1. Resumen Ejecutivo y Filosofía de Diseño
+## 1. Visión General de la Arquitectura (High-Level Overview)
 
-### 1.1 Propósito del Sistema
-**PresentMD** es un motor de transformación de alto rendimiento y un generador de sitios estáticos (SSG) especializado en la creación de presentaciones técnicas e interactivas a partir de texto plano en formato Markdown enriquecido con metadatos YAML. 
-
-El sistema resuelve las ineficiencias inherentes a las herramientas de software tradicionales de presentaciones visuales (como Microsoft PowerPoint o Apple Keynote), las cuales sufren de:
-1. **Falta de interoperabilidad con sistemas de control de versiones (Git):** Los archivos binarios pesados generan conflictos de combinación (merge conflicts) indescifrables.
-2. **Desplazamiento del foco del autor:** Los desarrolladores y arquitectos pierden tiempo valioso en micro-ajustes visuales (alineación, márgenes, distribución manual) en lugar de centrarse en la consistencia de la lógica y los datos.
-3. **Pérdida de portabilidad:** Dependencia de entornos de ejecución específicos o conectividad a internet para renderizar fuentes, temas y animaciones complejas.
-
-### 1.2 Principios de Diseño
-El diseño de PresentMD se rige por cuatro principios fundamentales:
-
-*   **Markdown-First (La estructura es la verdad):** El contenido textual es soberano. La semántica del Markdown define automáticamente el layout y flujo de la información. El usuario nunca escribe HTML o CSS directo en el documento de contenido.
-*   **Declarativo sobre Imperativo:** El autor declara *qué* componentes lógicos desea visualizar (ej: `:::kpi-grid` para métricas clave o `:::timeline` para roadmaps) y el motor infiere y optimiza de forma autónoma la posición, la tipografía y el flujo volumétrico según el tema visual activo.
-*   **Rendimiento y Portabilidad Offline Extremos:** Las presentaciones finales se compilan en un único documento HTML autocontenido de carga instantánea, con tipografías y recursos críticos inyectados en Base64. Las transiciones interactivas se ejecutan nativamente en el navegador a 60 FPS mediante aceleración por hardware.
-*   **Developer Experience (DX) Profesional:** Diseñado como una herramienta CLI que se integra en pipelines de CI/CD, permite depuración en vivo del Árbol de Sintaxis Abstracta (AST), diagnóstico de dependencias de sistema mediante comandos dedicados y recarga en caliente (Live Preview) sin parpadeo del navegador.
-
----
-
-## 2. Stack Tecnológico
-
-El motor de PresentMD está desacoplado en dos capa independientes: una capa de compilación en tiempo de build escrita en Python y una capa de interacción y renderizado en tiempo de ejecución escrita en Javascript Vanilla y CSS moderno.
+PresentMD está diseñado bajo el patrón arquitectónico de **Generador de Sitios Estáticos (SSG) Desacoplado** con un **Runtime en Cliente sin Framework (Zero-Framework Runtime)**. El sistema separa estrictamente las preocupaciones en dos fases de ejecución:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                       BACKEND (Python)                      │
-│  ┌──────────────┐   ┌───────────────┐   ┌────────────────┐  │
-│  │    Typer     │   │ markdown-it-py│   │     Jinja2     │  │
-│  │ (CLI Engine) │   │ (AST Parser)  │   │  (Templating)  │  │
-│  └──────────────┘   └───────────────┘   └────────────────┘  │
+│                 FASE DE COMPILACIÓN (Python)                │
+│  Ingesta de datos, parsing de AST, inferencia de layouts,   │
+│  resolución de temas e inlining de recursos estáticos.      │
 └──────────────────────────────┬──────────────────────────────┘
-                               │ Compila a HTML Autocontenido
-┌──────────────────────────────▼──────────────────────────────┐
-│                      FRONTEND (Vanilla JS)                  │
-│  ┌────────────────────────┐         ┌────────────────────┐  │
-│  │   View Transitions API │         │   Canvas 2D API    │  │
-│  │ (Cinematic Slide Anim) │         │ (Live Drawing/Lsr) │  │
-│  └────────────────────────┘         └────────────────────┘  │
+                               │ Compila a HTML Monolítico
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 FASE DE PRESENTACIÓN (Browser)              │
+│  Navegación secuencial, transiciones de vista cinemáticas,  │
+│  dibujo en lienzo, consola dual offline y Mermaid nativo.   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 2.1 Backend: Motor de Compilación (Python 3.12+)
-*   **CLI Engine:** Se utiliza **`typer`** en conjunto con **`rich`**. Typer proporciona enrutamiento rápido de comandos y validación estricta de tipos de entrada. Rich se encarga de la salida en consola mediante paneles formateados, tablas visuales y árboles de renderizado jerárquicos para la visualización del AST.
-*   **Parsing y AST:** **`markdown-it-py`**. Se selecciona debido a su arquitectura basada en tokens y reglas flexibles que permiten la inserción de plugins a nivel de lexer para procesar sintaxis personalizada sin romper el estándar CommonMark.
-*   **Motor de Plantillas:** **`Jinja2`**. Permite aislar los archivos estructurales de layouts (`.html.j2`) y realizar una inyección segura y dinámica de variables del tema visual, diagramas pre-compilados y scripts JavaScript.
-*   **Generador PDF:** **`playwright`** (Python Sync API). Permite instanciar un navegador Chromium Headless de forma programática, garantizando la renderización y rasterización pixel-perfect de diagramas SVG, scripts interactivos y fuentes inyectadas bajo reglas `@media print`.
-
-### 2.2 Frontend: Motor de Interacción (Vanilla JS & CSS Nativos)
-*   **Framework Frontend:** **Ninguno (Vanilla JS puro)**. Está estrictamente prohibida la introducción de React, Vue, Svelte o dependencias de Node.js en el cliente. Esto garantiza portabilidad total y un tiempo de carga inferior a 10ms.
-*   **Estructura y Maquetación:** **CSS Grid y CSS Flexbox**. Se prohíbe el uso de posicionamiento absoluto para contenidos estructurados. CSS Grid proporciona el control bidimensional exacto para layouts complejos (como la comparación en paralelo), mientras que Flexbox distribuye los flujos verticales.
-*   **Sistema de Variables:** **CSS Custom Properties (`--accent-primary`, etc.)**. Permiten desacoplar por completo el estilo estético del tema de la lógica de renderizado del motor.
-*   **Animaciones y Transiciones:** **View Transitions API nativa** (`document.startViewTransition`). Permite capturar capturas de pantalla de los estados DOM salientes y entrantes y realizar transiciones cruzadas (cross-fade) o animaciones cinemáticas complejas a nivel del compositor del navegador, con fallback automático de opacidad en navegadores no compatibles.
-
-### 2.3 Motores de Gráficos y Renderizado de Diagramas
-El sistema procesa bloques de código con identificadores de lenguaje específicos (`d2` y `mermaid`) delegando la generación a herramientas de línea de comandos locales:
-*   **D2:** Compilador local `d2` que genera layouts declarativos optimizados para diagramas de arquitectura.
-*   **Mermaid:** Compilador CLI `mmdc` que genera diagramas de flujo y secuencias.
-*   **Búsqueda Dinámica de Ejecutables:** El sistema no utiliza rutas absolutas fijas para invocar las herramientas externas. En su lugar, realiza un escaneo ordenado y dinámico en el sistema para encontrar `d2` y `mmdc` en el `PATH` global, en carpetas de control de versiones de Node (**NVM** como `~/.nvm/versions/node/v*/bin/mmdc`), **Volta** (`~/.volta/bin/mmdc`), y directorios globales de npm (`~/.npm-global/bin/mmdc`).
-*   **Caché Persistente de Diagramas:** Se implementa un mecanismo de persistencia local en `~/.cache/presentmd/diagrams/`. Las compilaciones se guardan como SVGs indexados mediante un hash MD5 único calculado a partir del código fuente, motor utilizado y tokens de color del tema activo.
-*   **Integración Cromática:** PresentMD intercepta la salida SVG cruda de estos motores y reemplaza dinámicamente las propiedades de estilo e inyecta reglas CSS inline para mapear los colores de conexión y bordes directamente a las variables del tema activo (ej: `--accent-primary` y `--accent-secondary`).
+### Justificación Técnica de la Estructura:
+1. **Separación de Ciclos de Vida:** Las tareas complejas de E/S, la validación de archivos, el análisis léxico (tokenización) y la compilación estructural se delegan a un entorno seguro y de tipado estático en tiempo de ejecución (Python 3.12+).
+2. **Eliminación de Sobrecarga en el Cliente:** El runtime de la presentación en el navegador utiliza JavaScript Vanilla y CSS puro para maximizar la tasa de refresco (60 FPS estables) y reducir el consumo de memoria en dispositivos embebidos o portátiles.
+3. **Portabilidad y Resiliencia Offline:** El resultado de la compilación es un único archivo HTML monolítico. Todos los recursos (fuentes tipográficas, layouts de CSS, controladores JS y logotipos) se inyectan directamente en el documento (mediante Base64 o inlining de texto), garantizando que la presentación funcione al 100% sin conexión a internet y sin necesidad de montar un servidor de producción local.
+4. **Simplificación del Entorno de Ejecución:** Se eliminan dependencias del sistema y de red mediante la delegación del renderizado de diagramas al cliente (Mermaid) y la exportación de PDFs al navegador (Ctrl + P), reduciendo el peso de la instalación y mitigando riesgos de seguridad derivados de subprocesos externos.
 
 ---
 
-## 3. Arquitectura de Alto Nivel y Flujo de Datos
+## 2. Estructura del Proyecto y Capas (Directory & Layering Structure)
 
-El flujo de procesamiento de PresentMD sigue un pipeline lineal unidireccional estructurado desde la ingesta del archivo plano hasta la entrega del entregable interactivo.
+### 2.1 Árbol de Directorios Real
+El código de la aplicación se organiza bajo una estructura modular de paquetes en la carpeta `src/presentmd/`:
 
-### 3.1 Pipeline de Transformación de Datos
-
-```mermaid
-graph TD
-    A[Archivo Markdown (.md) + YAML Frontmatter] --> B[Slide Splitter: Separación por '---']
-    B --> C[Frontmatter Extractor: Carga de metadatos YAML vía PyYAML]
-    C --> D[Markdown-It-Py Parser: Tokenización del documento]
-    D --> E[Custom Extension Plugins: Procesamiento de directivas y layouts]
-    E --> F[AST Generator: Construcción de SlideElements Semánticos]
-    F --> G[Engine Orchestrator: Inspección de diagramas D2/Mermaid]
-    G --> H[ThreadPoolExecutor: Compilación concurrente de diagramas a SVG]
-    H --> I[DiagramCache: Lectura/Escritura en cache local .cache/presentmd/]
-    I --> J[Jinja2 Renderer: Unión de layouts HTML e inyección de CSS/JS]
-    J --> K[HTML Autocontenido Final]
-    K --> L[CLI Serve: Inyección de SSE / Servidor HTTP]
-    K --> M[Playwright Headless: Generación de PDF Pixel-Perfect]
+```
+src/presentmd/
+├── cli/
+│   ├── __init__.py
+│   └── main.py              # CLI principal de Typer y Rich
+├── parser/
+│   ├── __init__.py          # Orquestador del pipeline de parsing
+│   ├── ast_builder.py       # Conversor de tokens de markdown-it a SlideElements
+│   ├── frontmatter.py       # Extractor y validador de metadatos YAML
+│   ├── models.py            # Modelos de datos del AST (Presentation, Slide, Element)
+│   ├── plugins.py           # Extensiones de tokenización de markdown-it-py
+│   └── slide_splitter.py    # Segmentador de láminas por '---' y notas de orador
+├── plugins/
+│   ├── __init__.py
+│   ├── components/          # Directorio de plugins de componentes autodescubiertos
+│   │   ├── __init__.py
+│   │   ├── alert.py
+│   │   ├── kpi_grid.py
+│   │   └── ... (24 componentes más)
+│   └── registry.py          # Registro central extensible de plugins ComponentPlugin
+├── render/
+│   ├── __init__.py
+│   ├── code_highlighter.py  # Resaltador de sintaxis para bloques de código
+│   ├── engine.py            # Compilador Jinja2, logo enliner y inyector de CSS/Fonts
+│   ├── html_builder.py      # Conversor de SlideElements en cadenas de HTML semántico
+│   ├── layout_inference.py  # Algoritmo de mapeo de plantillas por heurística
+│   ├── theme_manager.py     # Gestor de búsqueda y carga de archivos de estilos CSS
+│   └── toc_builder.py       # Generador estructural del Table of Contents (TOC)
+├── serve/
+│   ├── __init__.py
+│   └── server.py            # Servidor HTTP multihilo y disparador de eventos SSE
+└── templates/               # Activos estáticos y plantillas Jinja2
+    ├── base.html.j2         # Esqueleto HTML de la presentación interactiva
+    ├── fonts/               # Tipografía local DM Mono en formato WOFF2
+    ├── layouts/             # Plantillas de distribución espacial de diapositivas
+    └── themes/              # Hojas de estilo CSS estructuradas por temas
 ```
 
-### 3.2 Flujo de Procesamiento Detallado
+### 2.2 Responsabilidades de las Capas y Reglas de Dependencia
+El sistema opera bajo un flujo de dependencias estrictamente unidireccional y acíclico, fluyendo desde las interfaces externas hacia el núcleo de datos:
 
-1.  **Ingesta y Segmentación:** El archivo de entrada es leído como UTF-8. El módulo `slide_splitter.py` realiza un pre-escaneo y segmenta el archivo utilizando la directiva lógica `---` (delimitador de diapositiva).
-2.  **Extracción de Metadatos:** El primer bloque delimitado (Frontmatter) es parseado con `PyYAML`, extrayendo la configuración global de la presentación: tema visual, color de acento personalizado, logo, transiciones y estructura de barra de navegación.
-3.  **Procesamiento del Lexer y Tokens:** Para cada diapositiva, una única instancia configurada de `markdown-it-py` procesa el contenido textual. Los plugins registrados interceptan la sintaxis personalizada (ej: directivas de bloque `:::` y de inline `[]{.badge}`).
-4.  **Generación de la AST Interna:** Los tokens del parser se recorren linealmente y se agrupan en una lista de objetos `SlideElement` (definidos en `models.py`), los cuales tipifican con precisión el contenido (KPIs, tablas estructuradas, bloques de código, diagramas vectoriales, etc.) y su metadata asociada.
-5.  **Compilación y Enlace de Gráficos:** El motor identifica los elementos tipo `diagram` y, utilizando un pool de hilos (`ThreadPoolExecutor`), compila los fragmentos concurrentemente a SVG vectorial utilizando la caché local basada en el hash MD5 del código y tema.
-6.  **Ensamblaje del Layout (Jinja2):** La presentación completa se inyecta en el entorno de plantillas de Jinja2. Cada diapositiva es enviada a su template de layout específico (ej: `layouts/standard.html.j2` o `layouts/split_comparison.html.j2`) resolviendo la herencia visual y las variables del tema.
-7.  **Inyección y Compilación Final:** Se realiza el inlining de las fuentes tipográficas en formato Base64 a partir del archivo binario local WOFF2, y se inyecta el código Javascript del controlador de navegación y presentación. El resultado es un único string HTML autocontenido.
+```
+┌────────────────────────────────────────────────────────┐
+│                        Capa CLI                        │
+│                (src/presentmd/cli/)                    │
+└───────────────────────────┬────────────────────────────┘
+                            │ Llama
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                    Capa de Servicio                    │
+│               (src/presentmd/serve/)                   │
+└───────────────────────────┬────────────────────────────┘
+                            │ Compila y recarga
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                     Capa de Render                     │
+│               (src/presentmd/render/)                  │
+└───────────────────────────┬────────────────────────────┘
+                            │ Transforma AST
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                     Capa de Parser                     │
+│               (src/presentmd/parser/)                  │
+└───────────────────────────┬────────────────────────────┘
+                            │ Define
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                   Capa de Dominio/AST                  │
+│             (src/presentmd/parser/models.py)           │
+└────────────────────────────────────────────────────────┘
+```
+
+*   **Reglas de Flujo Estrictas:**
+    1.  **Independencia de la Capa de Dominio:** `parser/models.py` no posee dependencias internas. Define los tipos de datos abstractos y estructurados utilizados por todas las demás capas.
+    2.  **Aislamiento del Parser:** La capa `parser` procesa texto plano y genera modelos `Presentation`/`Slide`. No conoce la existencia de los temas visuales ni la infraestructura del servidor de desarrollo.
+    3.  **Responsabilidad de Renderizado:** La capa `render` consume objetos del AST y los transforma en HTML interactivo utilizando layouts de `templates/layouts/` y CSS de `templates/themes/`. Tiene prohibido modificar el contenido original del AST.
+    4.  **Orquestación de CLI:** `cli/main.py` actúa como el controlador principal de ejecución (`Controller`). Importa el parser, el renderizador y el servidor HTTP para implementar los casos de uso del usuario.
 
 ---
 
-## 4. Desglose de Componentes del Núcleo (Core Engine)
+## 3. Componentes Clave del Sistema (Core Components & Modules)
 
-### 4.1 Markdown Parser Extensible (`ast_builder.py` & `plugins/registry.py`)
-El parsing extensible está diseñado bajo un patrón de registro de componentes desacoplado. En lugar de procesar los tokens de forma imperativa dentro del compilador central, el sistema registra clases de plugins en `ComponentRegistry` que implementan el protocolo `ComponentPlugin`.
+### 3.1 El Pipeline del Parser (`parser/__init__.py`)
+La función `parse_presentation(path)` coordina la lectura, extracción de metadatos y tokenización del archivo fuente en Markdown.
+
+*   **Fase 1: Extracción del Frontmatter (`parser/frontmatter.py`):**
+    Utiliza la expresión regular `\A---\s*\n(.*?)\n---\s*\n?` con la bandera `re.DOTALL` para aislar el encabezado del archivo. El contenido del bloque es procesado mediante `yaml.safe_load`. Se valida que el resultado sea un mapeo estructurado (`dict`); de lo contrario, se genera una excepción `ValueError`.
+*   **Fase 2: Segmentación de Slides (`parser/slide_splitter.py`):**
+    Divide el archivo utilizando la marca lógica `---`. El algoritmo implementa un analizador de estado básico de una sola pasada (`single-pass state analyzer`) para ignorar las marcas `---` que se encuentran dentro de bloques de código (delimitados por ```` ````) o dentro de directivas de contenedor de PresentMD (delimitados por `:::`). De forma simultánea, extrae los comentarios HTML `<!-- notes -->...<!-- /notes -->` y los bloques `:::notes...:::` para asignarlos al campo `speaker_notes` del objeto `Slide`.
+*   **Fase 3: Tokenización AST Extensible (`parser/ast_builder.py`):**
+    Configura una instancia del tokenizador `MarkdownIt` e inyecta cinco plugins a nivel del analizador léxico:
+    *   `layout_directive_plugin`: Intercepta la directiva `::layout{nombre}` para definir la plantilla visual.
+    *   `bg_image_directive_plugin`: Captura `::bg-image{src="..." opacity="..."}` para aplicar imágenes de fondo en los slides.
+    *   `container_plugin`: Intercepta bloques del tipo `:::nombre_componente {atributos}` ... `:::`.
+    *   `badge_plugin`: Identifica elementos de badge inline `[texto]{.clase}`.
+    *   `mark_plugin`: Detecta resaltados de texto mediante la sintaxis nativa `==texto==` y los envuelve en tokens de tipo `mark`.
+    El método `_convert_tokens_to_elements` recorre linealmente los tokens resultantes, extrayendo metadatos detallados (por ejemplo, los pasos de resaltado dinámico de líneas de código `{1|2-3|all}` o las coordenadas espaciales de los pins en el componente `hotspots`) y construye el árbol jerárquico de objetos `SlideElement`.
+
+### 3.2 El Registro de Componentes (`plugins/registry.py`)
+Maneja la extensibilidad y el desacoplamiento de componentes. Define el protocolo `ComponentPlugin`:
 
 ```python
 class ComponentPlugin(Protocol):
     @property
     def name(self) -> str: ...
+    def parse_metadata(self, content: str, attrs: Dict[str, Any]) -> Dict[str, Any]: ...
     def render_html(self, content: str, metadata: Dict[str, Any], render_inline: callable) -> str: ...
 ```
 
-#### Mecanismo de Intercepción de Directivas:
-1.  **Directivas de Layout (`::layout{name}`):** Interceptadas por `layout_directive_plugin` en la fase de tokenización. Se extrae el nombre del layout y los atributos opcionales colocándolos en la metadata del slide para determinar el template Jinja2 de destino.
-2.  **Contenedores Personalizados (`:::`):** Interceptadas por `container_plugin`. El lexer de `markdown-it` detecta el inicio y fin de las tres marcas de dos puntos (`:::kpi-grid` ... `:::`) y asocia el bloque con un token tipo `container_name_open`.
-3.  **Extracción Semántica:** En `ast_builder.py`, el método `_convert_tokens_to_elements` procesa estos tokens especializados aplicando expresiones regulares optimizadas para extraer colecciones tipadas de datos:
-    *   **KPIs:** `^\-\s*\[(.+?)\]\s*(.+?)(?:\s*\{status:\s*(\w+)\})?\s*$` extrae el valor masivo, etiqueta explicativa y el estado semántico de criticidad.
-    *   **Timeline:** Identifica fases mediante viñetas en negrita (`- **Badge**: Título`), sub-items e hitos de entrega representados por citas (`> entregable`).
-    *   **Progress-bars:** `^\-\s*(.+?):\s*(\d+)%(?:\s*\{color:\s*(\w+)\})?\s*$` captura etiquetas, porcentajes y variaciones de color de barra.
-    *   **Parallel-compare:** Divide el cuerpo interno del bloque utilizando el delimitador secundario `---`, mapeando el contenido a un layout de doble columna (izquierdo y derecho) con un badge central opcional (`center-badge="VS"`).
+Durante la inicialización, la función `discover_plugins()` inspecciona dinámicamente el paquete `presentmd.plugins.components` e importa todas las clases que implementen este protocolo, registrándolas en la instancia global `component_registry`. Esto permite agregar nuevos elementos (como gráficos de barras, diagramas de procesos o paneles de pestañas) simplemente creando un archivo en el subdirectorio de componentes, sin modificar el núcleo del compilador.
 
-### 4.2 Gestor de Estado de la Presentación (Javascript Controller)
-El estado de la presentación interactiva es gestionado en el cliente a través de una función autoejecutable (IIFE) que encapsula el contexto y evita la polución del espacio de nombres global.
+### 3.3 El Motor de Compilación y Renderizado (`render/engine.py`)
+Encapsula la orquestación del motor de plantillas Jinja2 (`FileSystemLoader`) y la resolución del entregable estático final.
+*   **Inlining de Fuentes y Logotipos:** Lee la tipografía local `DMMono-Regular.woff2` y la incrusta en el HTML como regla `@font-face` con codificación Base64. De la misma manera, lee la ruta del logo definida en el frontmatter, comprueba su existencia en el disco local y lo convierte a un Data URI seguro en Base64.
+*   **Inferencia de Layouts (`render/layout_inference.py`):**
+    Si un slide no posee una directiva `::layout{}` explícita, se aplica una heurística automática:
+    *   Si el slide solo contiene encabezados H1/H2 y párrafos de longitud inferior a 120 caracteres, se le asigna el layout `title`.
+    *   Si contiene una tabla con más de 5 filas o el contenido de texto supera los 1200 caracteres, se le asigna el layout `scrollable`.
+    *   De lo contrario, se asigna el layout por defecto `standard`.
+*   **Gestión de Temas (`render/theme_manager.py`):**
+    Busca la hoja de estilos CSS correspondiente al tema indicado. El orden de prioridad de búsqueda es:
+    1.  Directorio del usuario en la carpeta local de configuraciones: `~/.config/presentmd/themes/<tema>/styles.css` (en Linux/macOS) o `%APPDATA%\presentmd\themes\<tema>\styles.css` (en Windows).
+    2.  Carpeta interna de plantillas de la librería: `templates/themes/<tema>/styles.css`.
+    3.  Tema base de respaldo: `templates/themes/nexus-blueprint/styles.css`.
 
-```javascript
-(function() {
-  const slides = document.querySelectorAll('.slide');
-  const total = slides.length;
-  let current = 0;
-  let history = []; // Pila LIFO para navegación no lineal
-  let laserActive = false;
-  let drawingActive = false;
-  // ...
-})();
-```
+### 3.4 Servidor de Desarrollo con SSE (`serve/server.py`)
+Proporciona un entorno interactivo local de edición en tiempo real.
+*   **Orquestador de Compilación:** Realiza una compilación inicial, crea el directorio `output/` y copia los activos e imágenes locales encontrados en el directorio base del archivo fuente.
+*   **Vigilancia del Sistema de Archivos:** Intenta cargar la librería `watchdog` para reaccionar ante los eventos de modificación de archivos provistos por el sistema operativo. En caso de no estar instalada, utiliza un bucle de polling que ejecuta un chequeo de tiempo de modificación física (`os.stat().st_mtime`) cada 500ms.
+*   **Live-Reload a través de Server-Sent Events (SSE):**
+    El handler del servidor HTTP expone el endpoint `/events` configurado como `text/event-stream`. Al detectarse un cambio en el archivo de texto y compilarse con éxito el nuevo HTML en disco, se recorre la lista thread-safe de clientes activos (`_sse_clients`) señalando sus respectivos objetos `threading.Event` para escribir el mensaje `data: reload\n\n` en los sockets de los navegadores conectados.
 
-#### Control de Secuencias e Historial:
-*   **Segmentación del Flujo Cronológico:** Durante la inicialización, el motor recorre los slides del DOM y construye un mapa de secuencia normal (`normalSequence`). Los slides marcados como anexos (`data-annex="true"`) reciben un valor de secuencia nulo (`null`).
-*   **Persistencia del Estado:** Cada cambio de diapositiva exitoso registra el índice actual en el almacenamiento de sesión del navegador (`sessionStorage.setItem('pmd_current_slide', current)`). Esto garantiza que el flujo de presentación continúe en la diapositiva exacta en caso de recargas en caliente (hot-reloads) del servidor de desarrollo o recarga manual del usuario.
-*   **Enrutamiento de Diapositivas:** El método central `goTo(idx, direction)` coordina la remoción de la clase `.active` de la diapositiva anterior, aplica la clase a la nueva diapositiva, fuerza un reflow del DOM (`slide.offsetHeight`) para reiniciar animaciones CSS y llama a la función de auto-escalado de fuentes.
-
-### 4.3 Motor de Interactividad (Stepping System)
-El motor de interactividad permite realizar pasos secuenciales (sub-pasos) dentro de una única diapositiva antes de cambiar el índice de slide. Cuando el usuario presiona las teclas de navegación o hace clic en el canvas, el controlador intercepta el evento e inspecciona la cola de pasos activos (`slideSteps`) del slide actual.
-
-```javascript
-function handleNext() {
-  if (currentSlideStepIndex < slideSteps.length) {
-    slideSteps[currentSlideStepIndex].action();
-    currentSlideStepIndex++;
-  } else {
-    next(); // Cambiar de diapositiva
-  }
-}
-```
-
-El sistema inicializa la colección `slideSteps` dinámetamente cada vez que se carga un slide en función de su contenido interactivo:
-
-1.  **Pasos de Listas (`:::steps`):**
-    *   **Estructura:** Lista ordenada o desordenada donde cada elemento posee inicialmente la clase CSS `.step-hidden` (`opacity: 0`).
-    *   **Acción:** La llamada progresiva remueve `.step-hidden` e inyecta la clase `.step-visible` aplicando transiciones de opacidad y transformaciones verticales suaves.
-    *   **Deshacer:** En caso de navegación reversa (`handlePrev`), el paso aplica nuevamente `.step-hidden`.
-
-2.  **Pilas de Capas (`:::layer-stack`):**
-    *   **Estructura:** Contenedor de imágenes posicionadas de forma absoluta y apiladas jerárquicamente en el eje Z. La primera imagen (índice 0) posee la clase `.active`, mientras que las demás poseen `.layer-hidden`.
-    *   **Acción:** Cada paso sucesivo aplica `.active` a la siguiente capa del stack, permitiendo la sobreposición progresiva de diagramas técnicos sin cambiar de slide.
-
-3.  **Paso a Paso de Líneas de Código (Code Stepping):**
-    *   **Estructura:** Bloques de código con marcado de líneas específicas (ej: `{1|2-3|all}`). Durante la compilación, el parser inyecta los grupos de líneas estructuradas en el atributo `data-code-steps` en formato JSON y envuelve las líneas en elementos `span.code-line` con el atributo `data-line`.
-    *   **Acción:** El paso dinámico lee las líneas activas del paso actual. Inyecta la clase `.highlight-active` a las líneas indicadas y atenúa el resto de las líneas del bloque reduciendo su opacidad a `0.3` a nivel de CSS del contenedor `.code-container.stepping`.
+### 3.5 Runtime del Cliente (JavaScript Vanilla en `base.html.j2`)
+Inyectado como una función autoejecutable (IIFE), gestiona la experiencia interactiva en el cliente:
+*   **Control del Estado y Consola Dual:** Sincroniza la navegación utilizando `sessionStorage` (`pmd_current_slide`). Al iniciar la vista de presentador (`?presenter=true`) en una segunda ventana, el runtime escucha el evento `storage` local y usa `postMessage` para sincronizar de forma bidireccional el slide activo y el índice de paso dinámico.
+*   **Navegación No Lineal y Anexos:** Los slides que poseen el layout `annex` se marcan en el DOM con `data-annex="true"`. Son excluidos de la numeración secuencial de la presentación. Al hacer clic en un enlace de detalle (`[ver](#anexo-a)`), el índice de la diapositiva de origen se almacena en una pila de historial (`history.push(current)`) y se transiciona al anexo. El botón "Volver" realiza un retorno inmediato recuperando el índice de la pila (`history.pop()`).
+*   **Resaltado dinámico de código y Stepping:** Controla la visibilidad de los sub-pasos dentro de un slide (`:::steps`, `:::layer-stack`, etc.). En los bloques de código, lee los pasos configurados y aplica clases de opacidad reducida (`0.3`) a todas las líneas que no estén activas en el sub-paso actual.
+*   **Algoritmo de Auto-Escalado (Fit-to-Screen):**
+    Resuelve los problemas de desbordamiento visual de fuentes en dos fases coordinadas:
+    1.  *Escalado Geométrico:* Calcula el valor mínimo del factor de escala según el ancho y alto del viewport contra la base de aspecto de 1280px x 720px y aplica `transform: scale(factor)` sobre el contenedor del slide.
+    2.  *Ajuste Fino de Fuente:* Si tras el escalado geométrico la altura del contenido real (`slide.scrollHeight`) supera los 720px del límite físico de la lámina, el runtime disminuye progresivamente la propiedad de tamaño de fuente del elemento raíz (`html`) en pasos de 2% hasta ajustar el contenido al viewport, deteniéndose al alcanzar el límite inferior de seguridad del 60% (9.6px).
 
 ---
 
-## 5. Implementación de Funcionalidades Avanzadas
+## 4. Flujo de Datos y Ciclo de Vida (Data Flow & Request Lifecycle)
 
-### 5.1 View Transitions API Nativa
-PresentMD saca provecho de la API nativa de transición de vistas de los navegadores modernos para proporcionar transiciones cinemáticas fluidas a 60 FPS sin necesidad de sobrecargar el frontend con librerías de animación pesadas (como GreenSock o Framer Motion).
+El ciclo de vida de compilación y visualización sigue los pasos secuenciales descritos a continuación:
 
-```javascript
-const performGoTo = () => {
-  // Código de manipulación de clases DOM para cambiar el slide activo
-};
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Usuario / CLI
+    participant main as cli/main.py
+    participant parser as parser/__init__.py
+    participant engine as render/engine.py
+    participant srv as serve/server.py
+    participant Browser as Browser Runtime
 
-if (document.startViewTransition) {
-  document.startViewTransition(performGoTo);
-} else {
-  performGoTo(); // Fallback tradicional
-}
+    User->>main: presentmd serve presentacion.md
+    activate main
+    main->>parser: parse_presentation(filepath)
+    activate parser
+    parser->>parser: Extraer Frontmatter (PyYAML)
+    parser->>parser: Segmentar Slides (slide_splitter)
+    parser->>parser: Construir AST (ast_builder + plugins)
+    parser-->>main: Objeto Presentation
+    deactivate parser
+
+    main->>engine: render_presentation(presentation, live_reload=True)
+    activate engine
+    engine->>engine: Inyectar fuentes (Base64) e imágenes (Data URIs)
+    engine->>engine: Inferir layouts y construir TOC
+    engine->>engine: Cargar y compilar temas CSS
+    engine->>engine: Renderizar HTML con Jinja2 (base.html.j2)
+    engine-->>main: HTML Monolítico
+    deactivate engine
+
+    main->>srv: start_serve(source, output_dir, port)
+    activate srv
+    srv->>srv: Guardar HTML compilado y recursos locales en /output
+    srv->>srv: Iniciar ThreadingHTTPServer (puerto 8000)
+    srv->>srv: Iniciar observador de archivos (watchdog / polling)
+    srv-->>Browser: Carga inicial de la presentación
+    deactivate srv
+    deactivate main
+
+    activate Browser
+    Browser->>Browser: Escalar slides geométricamente y auto-ajustar fuentes
+    Browser->>srv: GET /events (Conexión SSE persistente)
+    activate srv
+
+    Note over User, srv: El usuario modifica 'presentacion.md' en su editor
+    srv->>srv: Watcher detecta cambio en el sistema de archivos
+    srv->>parser: parse_presentation(filepath)
+    srv->>engine: render_presentation(presentation, live_reload=True)
+    srv->>srv: Escribir nuevo archivo HTML compilado a disco
+    srv->>Browser: SSE Event: 'data: reload\n\n'
+    deactivate srv
+    Browser->>Browser: Guardar slide actual en sessionStorage
+    Browser->>Browser: location.reload()
+    Browser->>Browser: Restaurar slide actual y aplicar transiciones de vista
+    deactivate Browser
 ```
 
-#### Ciclo de Vida de la Transición de Vistas:
-1.  Al llamar a `document.startViewTransition()`, el navegador captura una instantánea visual del estado actual de la presentación (Lámina A).
-2.  Se ejecuta el callback síncrono `performGoTo` que actualiza el DOM retirando la clase `.active` de la diapositiva A y asignándosela a la diapositiva B.
-3.  El navegador captura el estado resultante (Lámina B).
-4.  Se ejecuta una animación nativa por defecto (cross-fade) entre ambas vistas a nivel del motor del renderizador del navegador. Los temas visuales pueden personalizar esta animación extendiendo el pseudoelemento `::view-transition-group` en el archivo `styles.css`.
+### Notas sobre el procesamiento de Gráficos y Exportación:
+*   **Renderizado de Diagramas (Mermaid):** Durante la fase de renderizado en Python, los diagramas Mermaid son inyectados de forma pasiva en bloques `<pre class="mermaid">` conteniendo el código fuente exacto en texto plano. No se ejecutan procesos secundarios en el servidor. Al cargarse el HTML en el cliente, la librería externa de Mermaid incrustada en la plantilla compila localmente el texto y renderiza el SVG en el DOM. El soporte para herramientas CLI de diagramación como D2 y compiladores de terminal NodeJS como `mmdc` está completamente desactivado del lado del servidor.
+*   **Pipeline de Exportación a PDF:** Cuando el usuario ejecuta `presentmd build presentacion.md --format pdf`, el compilador genera el archivo HTML final estático con todas las fuentes y logotipos inyectados en la carpeta `output/`. Para asegurar el renderizado estático óptimo de los elementos interactivos del DOM y evitar la sobrecarga de instalar librerías pesadas como Playwright, la compilación de PDF se delega a las capacidades nativas de impresión del navegador. El documento CSS define reglas `@media print` específicas que aíslan la lámina activa, eliminan barras de navegación y controles interactivos y formatean la salida para una maquetación pixel-perfect en relación de aspecto de 16:9.
 
-### 5.2 Navegación No Lineal e Historial de Anexos
-Las presentaciones técnicas de arquitectura requieren la capacidad de responder a preguntas de la audiencia saltando a detalles profundos y retornando rápidamente al flujo principal.
+---
 
-```
-                  Salto a Anexo (Ej: #anexo-costos)
-  Lámina Normal ────────────────────────────────────► Diapositiva de Anexo
-        ▲                                                      │
-        │             Botón "Volver" / Back                    │
-        └──────────────────────────────────────────────────────┘
-                  history.pop() -> goTo(lastIndex)
-```
+## 5. Patrones de Diseño e Integraciones (Design Patterns & Ecosystem)
 
-*   **Identificación del Anexo:** Los slides con directiva `::layout{annex}` se compilan con el atributo `data-annex="true"` y la clase CSS `.annex`. Estos slides son ignorados por el indexador de páginas normal (no alteran el conteo de páginas de la presentación) y son omitidos de la secuencia de teclas directas (flecha derecha/izquierda no los cargan de forma accidental).
-*   **Mecanismo de Enlace Profundo (Deep Linking):** Los hipervínculos marcados con la clase `.link-detalle` o `.link-anexo` (sintaxis Markdown: `[Ver detalle →](#anexo-costos){.link-detalle}`) poseen un escuchador de eventos click delegado en JavaScript. Al activarse:
-    1.  Se captura el slide destino resolviendo el selector ID (ej: `#anexo-costos`).
-    2.  Se guarda el índice de la diapositiva actual en la pila `history` (`history.push(current)`).
-    3.  Se ejecuta la transición inmediata al slide anexo.
-*   **Retorno al Contexto (Mecanismo "Volver"):** Las diapositivas anexas implementan de forma estructural un botón con la clase `.btn-volver`. Al hacer clic en este botón, el controlador de JavaScript ejecuta:
-    ```javascript
-    if (history.length > 0) {
-      goTo(history.pop(), 'backward');
-    } else {
-      prev(); // En caso de que no haya historial previo
-    }
+### 5.1 Patrones de Diseño Implementados
+
+*   **Registry Pattern (Patrón Registro):**
+    El objeto `ComponentRegistry` en `plugins/registry.py` implementa este patrón, manteniendo un inventario dinámico indexado de plugins de visualización personalizados. Esto aisla la lógica de parsing genérica de la especificación técnica de renderizado de cada componente.
+*   **Strategy / Polymorphism (Patrón Estrategia):**
+    El resolvedor de elementos en `html_builder.py` despacha la acción de renderizado polimórficamente. Si el elemento posee el tipo `container_`, localiza la estrategia del componente en el registro central y ejecuta su método `render_html`, delegando el algoritmo visual al plugin correspondiente.
+*   **Pipeline Pattern (Patrón Tubería):**
+    El flujo de procesamiento implementado en `parser.parse_presentation` ejecuta un pipeline de transformación de datos lineal y unidireccional: `File Ingestion` -> `Frontmatter Extraction` -> `Slide Splitting` -> `AST Generation` -> `Presentation Packaging`.
+*   **Observer Pattern (Patrón Observador):**
+    *   *Backend:* El servidor de desarrollo se suscribe a los eventos del sistema de archivos mediante la interfaz de observadores de `watchdog`.
+    *   *Frontend:* Los componentes estructurados SmartArt del cliente (como `PmdPyramid` y `PmdSmartArtBase`) instancian un `MutationObserver` en JavaScript para vigilar la clase de visibilidad de los elementos del DOM y re-renderizar dinámicamente los gráficos vectoriales SVG del cliente cuando se activa un sub-paso.
+*   **Fallback / Degradación Aceptable:**
+    El sistema cuenta con múltiples alternativas de ejecución automática:
+    - Uso de *polling* si la librería `watchdog` no está disponible.
+    - Fallback a la plantilla de diapositiva estándar si el layout personalizado indicado en el frontmatter no se encuentra en el disco.
+    - Fallback de animación por opacidad estándar si el navegador no cuenta con soporte para el View Transitions API.
+
+### 5.2 Integración con Librerías del Ecosistema
+
+Las dependencias de infraestructura están declaradas y validadas por el archivo `pyproject.toml` bajo el build-backend `hatchling`:
+
+*   **`typer` (con `click`):** Controla el mapeo de los comandos CLI del usuario y sus opciones.
+*   **`rich`:** Permite generar el formateo enriquecido de la consola en la terminal de diagnóstico (`doctor`), la visualización jerárquica del AST (`debug`) y los paneles informativos del compilador.
+*   **`markdown-it-py`:** Analizador de sintaxis estructurada rápido y compatible con CommonMark, utilizado como base de tokenización del compilador.
+*   **`PyYAML`:** Ingesta y parsing seguro de metadatos de configuración de la presentación.
+*   **`Jinja2`:** Motor de plantillas que unifica los fragmentos HTML semánticos en el esqueleto de visualización.
+*   **`watchdog`:** Integración opcional (`serve`) para monitorear eventos del sistema de archivos.
+*   **`pytest`:** Infraestructura de ejecución de pruebas unitarias y de integración.
+
+---
+
+## 6. Manejo de Errores, Resiliencia y Seguridad
+
+### 6.1 Estrategia de Control de Errores y Resiliencia
+El framework gestiona las excepciones de forma controlada en todas las capas:
+*   **Validaciones en el CLI:** Las excepciones arrojadas por archivos faltantes o estructuras de metadatos YAML rotas son capturadas en `cli/main.py` empleando bloques `try-except` dedicados. Se genera una salida visual con descripciones y trazas de depuración estructuradas, deteniendo la ejecución mediante códigos de salida controlados (`typer.Exit(code=1)`).
+*   **Resiliencia del Servidor HTTP:** El servidor HTTP local intercepta y descarta de forma silenciosa errores comunes de socket tales como `BrokenPipeError`, `ConnectionResetError` y `OSError` producidos cuando un navegador cierra abruptamente la conexión de eventos SSE `/events`, previniendo la caída del proceso de desarrollo en consola.
+*   **Recuperación en el Cliente:** La comunicación mediante almacenamiento compartido y paso de mensajes bidireccional valida la integridad de los índices numéricos recibidos. En caso de recibir un slide ID inexistente, el motor realiza un fallback de seguridad y carga la primera diapositiva de la presentación.
+
+### 6.2 Directrices y Mecanismos de Seguridad
+Dado que PresentMD es una herramienta de compilación local y de distribución estática, se implementan protecciones críticas en el código para prevenir ejecuciones de código no autorizadas o accesos ilegítimos al sistema de archivos del usuario:
+
+*   **Prevención de Path Traversal (Ataques de Directorio):**
+    El inyector del logo y de imágenes de fondo valida rigurosamente las rutas relativas. El método `_get_logo_data_uri` en `render/engine.py` resuelve la ruta absoluta del recurso y verifica explícitamente si se encuentra contenida de forma estricta dentro del directorio de trabajo de la presentación:
+    ```python
+    logo_path = (presentation_dir / logo_path_str).resolve()
+    if not logo_path.is_relative_to(presentation_dir.resolve()):
+        # Se deniega el acceso al recurso externo
     ```
-
-### 5.3 Herramientas de Presentador en Vivo (Canvas API & Laser Mode)
-Para mejorar la dinámica de las exposiciones en vivo, el shell base incluye dos capas de anotación superpuestas interactuando directamente con los eventos del dispositivo apuntador.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    VIEWPORT DEL NAVEGADOR                   │
-│                                                             │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │ 1. Capa Laser Pointer Overlay (#laserPointer)         │  │
-│  └───────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │ 2. Capa Drawing Canvas Overlay (#drawingCanvas)       │  │
-│  └───────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │ 3. Capa Contenedor de Diapositiva (.slide.active)     │  │
-│  └───────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### Capa de Dibujo Libre (Drawing Canvas):
-*   **Implementación:** Un elemento HTML5 `<canvas id="drawingCanvas">` se posiciona de forma fija cubriendo el 100% de la pantalla por encima de las diapositivas (`z-index: 1000`).
-*   **Captura de Trazos:** Al activarse mediante la tecla `d`/`D` o el botón de la interfaz, el canvas añade escuchadores para eventos `mousedown` / `mousemove` / `mouseup` (y sus contrapartes táctiles `touchstart` / `touchmove` / `touchend`).
-*   **Estilos Dinámicos:** Los trazos se dibujan aplicando interpolación de líneas suaves en el contexto 2D (`canvasCtx.lineTo(x, y)`), utilizando un grosor de trazo de `4px` y recuperando el color primario del tema activo directamente desde el DOM mediante:
-    `getComputedStyle(document.documentElement).getPropertyValue('--accent-primary')`.
-*   **Persistencia por Slide:** Para evitar que las anotaciones se mezclen al cambiar de lámina, el controlador guarda el estado del canvas antes de realizar cualquier transición convirtiendo el lienzo a una URI de datos Base64 y almacenándolo en un diccionario indexado por el índice de la diapositiva:
-    `savedDrawings[current] = drawingCanvas.toDataURL();`
-    Al retornar o cargar una diapositiva, se limpia el lienzo y se vuelve a pintar la imagen almacenada.
-
-#### Capa de Puntero Láser (Laser Mode):
-*   **Implementación:** Un elemento circular `#laserPointer` posicionado absolutamente en el viewport con un diseño radial difuminado de color rojo brillante (`box-shadow: 0 0 20px 8px #ff0000`).
-*   **Funcionamiento:** Al activarse mediante la tecla `l`/`L` o el botón respectivo, se interceptan los eventos globales de movimiento del ratón (`mousemove`), actualizando las propiedades CSS de posicionamiento `left` y `top` con las coordenadas del cursor del ratón. El puntero físico del sistema se oculta en CSS utilizando `cursor: none` en todo el cuerpo de la presentación.
-
-### 5.4 Modo Presentador de Doble Ventana Offline
-El sistema incorpora un modo de consola de presentador avanzado y autocontenido diseñado para ejecutarse en configuraciones de pantalla doble o proyecciones.
-
-*   **Activación:** Se puede iniciar haciendo clic en el botón de presentador (👨‍🏫) en la barra de navegación o presionando la tecla `p` / `P`. Esto abre una ventana secundaria apuntando al parámetro de consulta `?presenter=true`.
-*   **Layout de la Consola:**
-    *   **Panel Izquierdo:** Muestra una vista previa en miniatura de la lámina actual (ajustada y escalada dinámicamente mediante JavaScript según el ancho disponible) y las notas de presentador (`data-notes`) renderizadas a un tamaño de fuente legible.
-    *   **Panel Derecho:** Muestra la vista previa del siguiente slide no anexo y dos herramientas de temporización: un reloj digital local de sistema y un cronómetro con botón de reinicio rápido.
-*   **Sincronización Bidireccional:** Las dos ventanas se comunican en tiempo real de forma bidireccional utilizando `localStorage` (mediante escuchas del evento `storage`) complementado con `postMessage`. Esto permite sincronizar de forma instantánea el cambio de diapositiva o de paso interactivo incluso si la máquina se encuentra completamente aislada de internet.
-
----
-
-## 6. Pipeline de Build y Exportación (CLI)
-
-El CLI de PresentMD (desarrollado con `typer` y formateado con `rich`) expone una interfaz limpia de comandos de sistema que controlan todo el ciclo de vida del desarrollo y entrega del material técnico.
-
-### 6.1 Comando `serve` (Servidor de Desarrollo y Live Preview)
-Levanta un entorno interactivo local diseñado para la co-creación de contenido en tiempo real.
-
-```
- [Editor de Texto] (Guarda archivo.md)
-        │
-        ▼ (Sistema de archivos detecta modificación)
- [PresentMD CLI (watchdog)] ──► Recompila archivo.md a HTML
-        │
-        ▼ (Notifica recarga vía SSE /events)
- [Navegador Web (EventSource)] ──► Lee 'reload' ──► sessionStorage.save() ──► location.reload()
-```
-
-1.  **Orquestación del Servidor HTTP:** Instancia un servidor HTTP multihilo local utilizando `ThreadingHTTPServer` sobre un puerto configurable (por defecto, `8000`).
-2.  **Monitoreo de Archivo:** El sistema de eventos de archivos de PresentMD intenta cargar la librería `watchdog` para suscribirse directamente a los eventos lógicos del kernel de sistema de archivos (`on_modified`). Si la librería no se encuentra instalada en el entorno, el CLI implementa un fallback transparente de polling pasivo utilizando un bucle secundario con chequeos periódicos de la fecha de última modificación del archivo (`os.stat(path).st_mtime`) cada 500ms.
-3.  **Mecanismo de Recarga vía Server-Sent Events (SSE):** El handler del servidor HTTP expone el endpoint `/events`. Cuando un navegador abre la presentación compilada con la bandera `live_reload=True`, inicializa una conexión continua de lectura persistente vía `EventSource('/events')`.
-4.  **Notificación de Cambio:** Al detectarse una modificación en el `.md` de origen, el subproceso del watcher ejecuta inmediatamente la compilación en caliente. Si la compilación es exitosa, se señalan todos los sockets de clientes activos registrados en la lista de hilos globales `_sse_clients` inyectando la cadena binaria `data: reload\n\n` en el socket, forzando la recarga instantánea del navegador.
-
-### 6.2 Comando `build` (Generación Estática Autocontenida)
-Construye la versión final optimizada para distribución o publicación web.
-
-*   **Flujo de Trabajo:**
-    1.  Parsea el Markdown de origen y procesa el frontmatter YAML.
-    2.  Genera el AST lúdico e invoca el resolvedor de diagramas en paralelo.
-    3.  Lee las fuentes tipográficas locales (ej: `DMMono-Regular.woff2`) y las inyecta directamente como una regla `@font-face` en base64 en la sección `<style>` del HTML.
-    4.  Localiza el logotipo especificado en el frontmatter, valida su canal alfa de transparencia para evitar layouts rotos si es PNG/SVG, y lo empaqueta como Data URI base64 en el cuerpo de la presentación.
-    5.  Crea un subdirectorio `output/` y escribe el archivo HTML resultante. Copia además los recursos de imagen locales referenciados en el documento Markdown para asegurar la visibilidad offline.
-
-### 6.3 Comando `build -f pdf` (Exportación Pixel-Perfect)
-Genera el documento en formato de impresión de alta resolución utilizando automatización de navegadores headless.
-
-*   **Paso 1: Generación del HTML Intermedio:** Ejecuta de forma síncrona el flujo del comando `build` generando un archivo HTML local en el subdirectorio temporal.
-*   **Paso 2: Instanciación Headless:** Invoca a `playwright.sync_api` e inicia un navegador Chromium aislado con un viewport configurado exactamente a una resolución de 16:9 (`1280x720`).
-*   **Paso 3: Sincronización del Estado de Red:** El script carga el HTML local a través del protocolo `file://`. Espera a que se cumplan las promesas lógicas de red y renderizado utilizando los estados:
-    *   `networkidle`: Asegura que no existan peticiones de red activas.
-    *   `domcontentloaded`: Confirma la carga completa del árbol DOM.
-    *   `wait_for_timeout(500)`: Agrega una pausa de 500ms requerida para la correcta inicialización y renderizado estático de los diagramas SVG generados por Mermaid o D2 y los bloques con resaltado de sintaxis.
-*   **Paso 4: Impresión PDF:** Llama al método nativo de automatización del navegador `page.pdf` configurando:
-    *   `print_background=True` para inyectar los colores del canvas y overlays.
-    *   `width="1280px"` y `height="720px"` para coincidir con las proporciones de diapositiva.
-    *   `prefer_css_page_size=True` para heredar las especificaciones de márgenes y saltos de página de `@media print`.
-
-### 6.4 Comando `debug` (Inspección AST)
-Diseñado para ingenieros y desarrolladores que desean extender el framework.
-*   **Funcionamiento:** Parsea el archivo Markdown y vuelca en la terminal una representación visual y jerárquica del AST. Imprime una tabla estructurada de los metadatos leídos del Frontmatter y genera un árbol visual mediante la API `rich.tree.Tree`, mostrando detalladamente los tipos de elementos lógicos (`heading`, `diagram`, `code_block` con sus números de línea de highlight y variaciones paso a paso, `container` personalizados con sus atributos asociados) y las notas de presentador asociadas a cada lámina.
-
-### 6.5 Comando `doctor` (Diagnóstico del Entorno)
-Comando autocontenido para la resolución y verificación de requerimientos en la máquina del usuario final.
-*   **Funcionamiento:** Realiza un escaneo de diagnóstico general y dibuja una tabla con el estado de:
-    1.  La versión e intérprete activo de Python.
-    2.  La disponibilidad y versión de la CLI de D2.
-    3.  La disponibilidad y versión de la CLI de Mermaid (`mmdc`).
-    4.  La instalación del SDK de Python de Playwright.
-    5.  La descarga e instalación del navegador Chromium de Playwright requerido para la exportación a PDF.
-
----
-
-## 7. Consideraciones de Rendimiento y Escalabilidad
-
-### 7.1 Algoritmo de Auto-Escalado Lógico (Fit-to-Screen)
-Una de las mayores problemáticas en presentaciones generadas desde código es el desbordamiento de texto (overflow) cuando el volumen de contenido excede los límites físicos de la diapositiva. PresentMD implementa un sistema híbrido de escalado que combina transformación geométrica coordinada de contenedores y compresión dinámica de fuentes tipográficas en base a mediciones del DOM en tiempo real.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    ESCALADO BIDIMENSIONAL                   │
-│                                                             │
-│   [Ventana del Navegador (vw, vh)]                          │
-│                  │                                          │
-│                  ▼ Calcula factor de escala (X e Y)         │
-│   Aplicación de transform: scale(factor) en .slide          │
-│   (Garantiza proporciones exactas de aspecto 1280x720)      │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   COMPRESIÓN DE FUENTE (DOM)                │
-│                                                             │
-│   ¿slide.scrollHeight > 720px?                              │
-│          ├── SI ──► Disminuye font-size raíz (16px -> 9.6px)│
-│          └── NO ──► Mantiene tamaño de fuente óptimo        │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### Fase 1: Ajuste de Relación de Aspecto (Escalado Geométrico)
-Durante la carga de la diapositiva y en cada evento de redimensionamiento de ventana (`resize`), el controlador de JavaScript ejecuta la función `scaleSlides()`. Esta calcula la proporción óptima entre la ventana actual y la diapositiva base de 1280px x 720px:
-```javascript
-const scaleX = window.innerWidth / 1280;
-const scaleY = window.innerHeight / 720;
-const scale = Math.min(scaleX, scaleY);
-```
-Posteriormente aplica `transform: scale(${scale})` y calcula el desplazamiento central para centrar la diapositiva en el viewport.
-
-#### Fase 2: Reducción de Fuente Dinámica por ScrollHeight
-Tras escalar geométricamente, se invoca `autoScaleSlideContent(slide)`. 
-1.  Se inicializa la propiedad de tamaño de fuente del documento raíz en `16px`.
-2.  Se mide la altura real del contenido interno de la diapositiva utilizando `slide.scrollHeight`.
-3.  Si `scrollHeight` es superior a la altura máxima permitida de `720px`, el script ejecuta un bucle iterativo de compresión: reduce progresivamente el tamaño de fuente en decrementos porcentuales de `2%` (disminuyendo el tamaño de fuente del elemento raíz html) mientras el contenido exceda los límites, deteniendo la reducción al alcanzar un tamaño mínimo seguro del `60%` (`9.6px`).
-4.  Si la diapositiva aún presenta desbordamiento al alcanzar el límite, el CLI del backend emitirá una advertencia explícita en consola durante el build para alertar al diseñador de que simplifique la estructura de la diapositiva.
-
-### 7.2 Caché de Diagramas Concurrente (DiagramCache & ThreadPool)
-Compilar diagramas a SVG vectorial mediante procesos locales de NodeJS o D2 es una operación costosa en procesamiento y tiempo de CPU (usualmente oscilando entre 1 y 3 segundos por diagrama).
-*   **Compilación Concurrente:** Para evitar retrasos lineales en la compilación de presentaciones masivas con múltiples diagramas, el módulo de compilación escanea la presentación y ejecuta los comandos de traducción en paralelo aprovechando la multiprogramación del procesador mediante `ThreadPoolExecutor` de Python.
-*   **Estrategia de Caché Local:** Cada diagrama compilado exitosamente se guarda en el disco local en `~/.cache/presentmd/diagrams/`. El nombre del archivo SVG guardado corresponde al hash hexadecimal MD5 calculado a partir de la firma de entrada:
-    `hash_key = md5(idioma_diagrama + codigo_fuente + color_accent + tema_d2)`.
-    En compilaciones subsecuentes, el motor verifica la existencia del hash en la caché antes de realizar cualquier llamada a subprocesos externos, reduciendo el tiempo de build de segundos a milisegundos en ejecuciones sucesivas.
-
----
-
-## 8. Guía de Extensibilidad (Para Desarrolladores)
-
-### 8.1 Cómo Agregar un Nuevo Componente Personalizado
-Para registrar un nuevo bloque estructurado (ej: `:::nuevo-componente`) en el pipeline de compilación de PresentMD, se deben seguir tres pasos de implementación:
-
-#### Paso 1: Definición del Componente en el Registro de Plugins
-Crear una nueva clase que cumpla el protocolo de plugin en `src/presentmd/plugins/registry.py` y registrarla:
-
-```python
-class NuevoComponente:
-    @property
-    def name(self) -> str:
-        return "nuevo-componente"
-
-    def render_html(self, content: str, metadata: dict, render_inline: callable) -> str:
-        # Extraer variables personalizadas o iterar sobre elementos
-        items = metadata.get("items", [])
-        color = metadata.get("attrs", {}).get("color", "normal")
-        
-        rendered_items = "".join(f"<li>{render_inline(i)}</li>" for i in items)
-        return f'<div class="nuevo-comp-box {color}"><ul>{rendered_items}</ul></div>'
-
-# Registrar el componente al final del archivo
-component_registry.register(NuevoComponente())
-```
-
-#### Paso 2: Configurar la Tokenización en el AST Builder
-Modificar `src/presentmd/parser/ast_builder.py` para añadir la regla de parseo de datos correspondiente a tu componente en la función `_convert_tokens_to_elements`.
-
-```python
-# Dentro del bloque de parsing de containers custom:
-elif container_name == "nuevo-componente":
-    # Analizar el cuerpo de texto en container_content y extraer items
-    # Ejemplo: parsing de viñetas simples
-    metadata["items"] = _parse_steps_items(container_content)
-```
-
-#### Paso 3: Definir la Estructura y Estilos en el CSS
-Añadir las reglas visuales para la clase `.nuevo-comp-box` y sus variaciones en el CSS de los temas o en `base.html.j2` si es un componente estructural global.
-
-```css
-.nuevo-comp-box {
-  background: var(--bg-chrome);
-  border-left: 4px solid var(--accent-primary);
-  padding: 16px;
-  border-radius: 8px;
-}
-.nuevo-comp-box.destacado {
-  border-color: var(--accent-secondary);
-}
-```
-
-### 8.2 Cómo Crear un Nuevo Tema Visual Completo
-PresentMD delega la apariencia cromática a archivos CSS puros y autónomos. Para crear un tema llamado `custom-dark`:
-
-#### Paso 1: Configurar el Directorio
-Crea una carpeta en el directorio de plantillas del sistema o en la ruta de configuración del usuario:
-*   **Ruta del framework:** `src/presentmd/templates/themes/custom-dark/styles.css`
-*   **Ruta de usuario (Linux/macOS):** `~/.config/presentmd/themes/custom-dark/styles.css`
-*   **Ruta de usuario (Windows):** `%APPDATA%\presentmd\themes\custom-dark\styles.css`
-
-#### Paso 2: Implementar Design Tokens Obligatorios
-El archivo `styles.css` debe declarar en la pseudo-clase `:root` los tokens tipográficos y cromáticos requeridos por el core y los plugins:
-
-```css
-:root {
-  /* Paleta Cromática Principal */
-  --bg-canvas: #0f172a;       /* Fondo del cuerpo de la diapositiva */
-  --bg-chrome: #1e293b;       /* Fondos de títulos, menús e indexador */
-  --text-main: #f8fafc;       /* Texto principal legible */
-  --text-muted: #94a3b8;      /* Metadatos y subtítulos */
-
-  /* Colores de Acento y Estados Semánticos */
-  --accent-primary: #f59e0b;  /* Cobre/Amarillo de marca */
-  --accent-secondary: #3b82f6;/* Azul secundario */
-  --accent-blue: #3b82f6;     /* Alerta informativa */
-  --accent-red: #ef4444;      /* Alerta crítica / KPI crítico */
-  --accent-yellow: #f59e0b;   /* Alerta de precaución */
-  --accent-green: #10b981;    /* Alerta de éxito */
-
-  /* Tipografías Nativas Fallback (Compatibilidad Offline) */
-  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-mono: 'DM Mono', monospace;
-}
-```
-
-#### Paso 3: Estilar Componentes Específicos
-Sobrescribe las clases estéticas de los componentes para asegurar legibilidad sobre el nuevo fondo (ej: `.kpi-card`, `.alert-box`, `.nav-arrow-btn`). El framework automáticamente aplicará los espaciados, layouts estructurales y la lógica de interacción basándose en estos tokens estéticos.
+    Esto impide que una diapositiva maliciosa intente inyectar y codificar en base64 archivos confidenciales del sistema de archivos del usuario (como claves SSH o archivos `/etc/passwd`).
+*   **Validación Estricta de Extensiones y MIME Types:**
+    Los recursos que se inyectan dinámicamente como Data URIs son analizados previamente. Se restringe el procesamiento del logo a un conjunto explícito y seguro de extensiones de imagen: `.png`, `.jpg`, `.jpeg`, `.svg`, `.gif` y `.webp`.
+*   **Desactivación de Subprocesos Externos Vulnerables:**
+    Debido a que el parsing de bloques de código de diagramación solía ejecutar herramientas del sistema de forma directa (como traductores CLI de D2 o ejecutables de node en la terminal), se ha eliminado por completo la invocación de subprocesos a comandos externos de traducción. Esto anula toda posibilidad de vulnerabilidades por inyección de comandos en terminal (`Command Injection`) a través de fragmentos de Markdown maliciosos.
+*   **Sanitización y Escapado de Salida:**
+    Todos los textos e información procesados a nivel de títulos, metaetiquetas y nombres de layouts son escapados de forma nativa a través del motor autoescape de Jinja2 y llamadas a `html.escape()`, previniendo ataques de Cross-Site Scripting (XSS) en las diapositivas compiladas.

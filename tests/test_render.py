@@ -148,7 +148,7 @@ class TestRenderPresentation:
         
         # Deben estar los componentes mapeados
         assert "kpi-grid" in html
-        assert "kpi-card critical" in html
+        assert 'data-color="6"' in html
 
     def test_render_table(self):
         el = SlideElement(
@@ -754,7 +754,7 @@ class TestRenderPresentation:
         assert 'data-layout="funnel"' in html
         assert 'data-steps="true"' in html
         assert 'pmd-pyramid-item' in html
-        assert 'smartart-color-primary' in html
+        assert 'data-color="primary"' in html
         assert 'step-hidden' in html
 
     def test_process_flow_rendering(self):
@@ -773,7 +773,7 @@ class TestRenderPresentation:
         assert '<pmd-process-flow' in html
         assert 'data-steps="true"' in html
         assert 'pmd-process-flow-item' in html
-        assert 'smartart-color-success' in html
+        assert 'data-color="success"' in html
         assert 'step-hidden' in html
 
 

@@ -36,9 +36,9 @@ class FeatureGridComponent:
         cards = []
         for item in items:
             icon = item.get("icon", "")
-color = item.get("color", "1")
+            color = item.get("color", "1")
             
-            items_html.append(
+            cards.append(
                 f'<div class="feature-card" data-color="{escape(color)}">'
                 f'<div class="fc-icon">{render_inline(icon)}</div>'
                 f'<div class="fc-content">{render_inline(item["content"])}</div>'
