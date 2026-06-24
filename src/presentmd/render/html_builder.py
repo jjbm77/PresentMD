@@ -175,7 +175,7 @@ def _render_heading(el: SlideElement) -> str:
     level = el.metadata.get("level", 1)
     tag = f"h{level}"
     css = f"slide-h{level}"
-    return f'<{tag} class="{css}">{escape(el.content)}</{tag}>'
+    return f'<{tag} class="{css}">{render_inline_markdown(el.content)}</{tag}>'
 
 def _render_paragraph(el: SlideElement) -> str:
     content = render_inline_markdown(el.content)

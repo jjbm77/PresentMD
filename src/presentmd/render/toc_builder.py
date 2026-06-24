@@ -54,14 +54,15 @@ def build_toc(presentation: Presentation) -> list[dict]:
                 normal_toc.append(item)
 
     # Añadir slide de cierre automático al final del TOC normal
-    closing_title = presentation.frontmatter.get("closing_message") or "Final"
-    normal_toc.append({
-        "index": non_annex_count,  # El índice de cierre siempre es la cantidad de slides no-anexos
-        "title": closing_title,
-        "level": 1,
-        "is_annex": False,
-        "annex_label": None,
-    })
+    if presentation.frontmatter.get("closing_slide", True) is not False:
+        closing_title = presentation.frontmatter.get("closing_message") or "Final"
+        normal_toc.append({
+            "index": non_annex_count,  # El índice de cierre siempre es la cantidad de slides no-anexos
+            "title": closing_title,
+            "level": 1,
+            "is_annex": False,
+            "annex_label": None,
+        })
                 
     return normal_toc + annex_toc
 

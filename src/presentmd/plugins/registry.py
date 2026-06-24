@@ -218,7 +218,7 @@ def _parse_parallel_columns(content: str) -> dict:
             stripped = line.strip()
             if stripped.startswith("### "):
                 col["header"] = stripped[4:].strip()
-            elif stripped.startswith("- "):
+            elif stripped.startswith("- ") or stripped.startswith("* ") or stripped.startswith("+ "):
                 col["items"].append(stripped[2:].strip())
         columns.append(col)
     return {"columns": columns}
