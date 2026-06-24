@@ -170,6 +170,24 @@ def render_slide_to_html(
     heading = slide.title or ""
     subtitle = ""
     
+    # Extraer eyebrow de la diapositiva si existe un párrafo de tipo eyebrow
+    import re
+    EYEBROW_BRACKET_RE = re.compile(r'^\[(.*?)\]\{\.eyebrow\}$')
+    eyebrow_elements = []
+    for el in slide.elements:
+        if el.type == "paragraph":
+            content_stripped = el.content.strip()
+            if content_stripped.lower().startswith("eyebrow:"):
+                eyebrow = content_stripped[len("eyebrow:"):].strip()
+                eyebrow_elements.append(el)
+                break
+            else:
+                match = EYEBROW_BRACKET_RE.match(content_stripped)
+                if match:
+                    eyebrow = match.group(1).strip()
+                    eyebrow_elements.append(el)
+                    break
+    
     # Extraer el primer H2 como subtítulo si existe en layout-standard
     body_elements = []
     found_subtitle = False
@@ -179,6 +197,8 @@ def render_slide_to_html(
     in_right_column = False
     
     for el in slide.elements:
+        if el in eyebrow_elements:
+            continue
         if el.type == "heading" and el.metadata.get("level") == 2 and not found_subtitle:
             if el.content != slide.title:
                 subtitle = el.content
@@ -198,7 +218,12 @@ def render_slide_to_html(
                 left_elements.append(rendered)
             
     # Renderizar todos los elementos para layout-title
-    all_elements_html = [render_element(el) for el in slide.elements]
+    all_elements_html = [render_element(el) for el in slide.elements if el not in eyebrow_elements]
+
+    from presentmd.render.html_builder import render_inline_markdown
+    eyebrow_html = render_inline_markdown(eyebrow) if eyebrow else ""
+    heading_html = render_inline_markdown(heading) if heading else ""
+    subtitle_html = render_inline_markdown(subtitle) if subtitle else ""
 
     # Warn if there's potential overflow in standard layout
     total_content_len = sum(len(el.content) for el in slide.elements)
@@ -234,9 +259,9 @@ def render_slide_to_html(
         "slide_id": slide_id,
         "is_annex": is_annex,
         "is_diagram_only": is_diagram_only,
-        "eyebrow": eyebrow,
-        "heading": heading,
-        "subtitle": subtitle,
+        "eyebrow": eyebrow_html,
+        "heading": heading_html,
+        "subtitle": subtitle_html,
         "body_elements": body_elements,
         "left_elements": left_elements,
         "right_elements": right_elements,
@@ -348,13 +373,15 @@ def render_presentation(presentation: Presentation, live_reload: bool = False) -
         current_index += 1
         
     # Generar slide de cierre automático
-    closing_html = _render_closing_slide(
-        env, presentation, logo_data_uri,
-        slide_index=current_index
-    )
-    slides_html.append(closing_html)
-    current_index += 1
-    
+    has_closing = presentation.frontmatter.get("closing_slide", True) is not False
+    if has_closing:
+        closing_html = _render_closing_slide(
+            env, presentation, logo_data_uri,
+            slide_index=current_index
+        )
+        slides_html.append(closing_html)
+        current_index += 1
+        
     # Renderizar anexos actualizando sus índices
     for slide in annex_slides:
         slide.index = current_index
@@ -363,7 +390,9 @@ def render_presentation(presentation: Presentation, live_reload: bool = False) -
         current_index += 1
     
     # Contar total de diapositivas que NO son anexos (contenido + cierre)
-    non_annex_count = len(non_annex_slides) + 1  # +1 por el slide de cierre
+    non_annex_count = len(non_annex_slides)
+    if has_closing:
+        non_annex_count += 1
     
     # Generar Table of Contents
     toc = build_toc(presentation)

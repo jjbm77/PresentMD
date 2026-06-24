@@ -3,9 +3,9 @@
   <div class="slide-bg-overlay" style="background-image: url('{{ bg_image.src }}'); {% if bg_image.opacity %}opacity: {{ bg_image.opacity }};{% endif %}"></div>
   {% endif %}
   <div class="slide-header">
-    {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
-    {% if heading %}<h1 class="slide-h1">{{ heading }}</h1>{% endif %}
-    {% if subtitle %}<h2 class="slide-h2">{{ subtitle }}</h2>{% endif %}
+    {% if eyebrow %}<div class="eyebrow">{{ eyebrow | safe }}</div>{% endif %}
+    {% if heading %}<h1 class="slide-h1">{{ heading | safe }}</h1>{% endif %}
+    {% if subtitle %}<h2 class="slide-h2">{{ subtitle | safe }}</h2>{% endif %}
   </div>
   <div class="slide-body">
     <div class="pc-left">
