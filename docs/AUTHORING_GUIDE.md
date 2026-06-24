@@ -1,391 +1,242 @@
-# PresentMD — Guía de Autoría y Funcionalidades
-**Versión 1.0**
+# Guía de Autor y Sintaxis (docs/AUTHORING_GUIDE.md)
 
-Esta guía explica en extremo detalle todas las funcionalidades de PresentMD, qué hacen, y cómo utilizarlas en tus presentaciones Markdown.
+¡Bienvenido al manual oficial de escritura de PresentMD! Esta guía está diseñada para que puedas dominar la creación de diapositivas interactivas y profesionales en cuestión de minutos, directamente en texto plano Markdown.
 
 ---
 
-## 1. Estructura y Configuración
+## 1. 🚀 ¡Bienvenido a PresentMD! (Tu Nueva Superpotencia)
 
-### 1.1 Frontmatter YAML
-El bloque YAML al inicio del archivo configura globalmente la presentación. Se define entre tres guiones `---`.
+Si alguna vez has perdido horas alineando cuadros de texto en PowerPoint, lidiando con fuentes rotas en Keynote o resolviendo conflictos de fusión imposibles en Git por culpa de archivos binarios, **PresentMD es tu solución**.
 
-**¿Qué hace?**
-Configura metadatos, temas visuales, logotipo, y comportamiento de navegación global de la presentación.
+PresentMD te permite diseñar presentaciones como si escribieras código:
+* **Foco en el Contenido:** Escribe en Markdown simple y deja que el motor de temas y renderizado se encargue del diseño pixel-perfect.
+* **Control de Versiones Limpio:** Tus diapositivas son archivos `.md` de texto plano. Dile adiós a los conflictos de Git.
+* **Diseñado para Desarrolladores:** Incluye soporte nativo para ejecución de pasos en bloques de código (Code Stepping), diagramas embebidos, componentes modulares dinámicos y notas del orador integradas.
 
-**Uso:**
-```yaml
 ---
-title: "Título de la Presentación"
-theme: nexus-blueprint    # 5 temas disponibles
-accent: "#C8006B"         # Override del color primario
-footer: "Texto pie"
-logo: logo.png
-logo_position: bottom     # top | bottom
-nav_arrows: true
-slide_number: true
-animations: true
-closing_message: "¡Gracias!"
-closing_subtitle: "¿Preguntas?"
----
-```
 
-### 1.2 Separación de Slides
-**¿Qué hace?**
-Divide el contenido continuo en diapositivas individuales.
+## 2. 🏁 Tu Primera Presentación en 60 Segundos
 
-**Uso:**
-Utiliza tres guiones `---` en una línea vacía.
+Crear tu primera presentación es tan simple como definir un encabezado de configuración (Frontmatter) y separar tus láminas con tres guiones (`---`).
+
+Crea un archivo llamado `presentacion.md` y pega el siguiente código:
+
 ```markdown
-Contenido del primer slide.
+---
+title: "Construyendo el Futuro del Software"
+theme: "nexus-blueprint"
+accent: "#C8006B"
+footer: "PresentMD Inc. · 2026"
+---
+
+# Transformación Digital
+## Rediseñando arquitecturas heredadas
+
+Bienvenidos a la nueva era de las herramientas de presentación técnicas.
 
 ---
 
-Contenido del segundo slide.
-```
+::layout{standard}
 
-### 1.3 Layouts Custom (`::layout`)
-**¿Qué hace?**
-Fuerza un diseño estructural específico para la diapositiva actual.
+# ¿Por qué PresentMD?
+## El poder de escribir tus ideas en texto plano
 
-**Layouts disponibles:**
-- `::layout{title}`: Fondo completo (oscuro/temático) para títulos principales.
-- `::layout{standard}`: Estándar (título superior, cuerpo abajo).
-- `::layout{scrollable}`: Para contenido largo que requiere scroll vertical.
-- `::layout{split-comparison}`: Divide el slide en dos mitades horizontales (ideal para comparar `|||`).
-- `::layout{annex}`: Marca la lámina como un anexo, excluyéndola del flujo principal secuencial.
+* **Portabilidad:** Corre offline y genera bundles HTML auto-contenidos.
+* **SmartArt Nativo:** Inserta diagramas complejos, KPIs y alertas directamente desde Markdown.
+* **Lienzo 16:9 Rígido:** Diseñado específicamente para pantallas modernas.
 
-**Uso:**
-```markdown
+---
+
 ::layout{split-comparison}
-# Título
-Lado Izquierdo
+
+# Comparativa de Flujos
+## Modernización de infraestructura y desarrollo
+
+### El Pasado
+* Diseño manual en diapositivas binarias
+* Cero integración con ramas de Git
+* Inconsistencia visual de marca
+
 |||
-Lado Derecho
+
+### El Futuro (PresentMD)
+* Automatización mediante CSS Vanilla
+* Pull Requests legibles en texto plano
+* Consistencia garantizada por tokens de diseño
 ```
 
-### 1.4 Hero Backgrounds (`::bg-image`)
-**¿Qué hace?**
-Asigna una imagen inmersiva de fondo a la diapositiva actual, con control de opacidad.
+### El Comando "Mágico" para Vista en Vivo:
+Para ver tus cambios reflejados en tiempo real mientras editas tu archivo Markdown, abre tu terminal y ejecuta el servidor de previsualización en vivo (Live Preview):
 
-**Uso:**
-```markdown
-::bg-image{src="assets/fondo.png" opacity="0.4"}
-# Diapositiva con fondo
+```bash
+presentmd serve presentacion.md
 ```
 
-### 1.5 Notas de Presentador
-**¿Qué hace?**
-Oculta notas de la vista pública pero las expone al presentador a través del atributo `data-notes`.
-
-**Uso:**
-```markdown
-:::notes
-Estas notas solo las ve el presentador al inspeccionar.
-:::
-```
+Esto abrirá automáticamente tu navegador en `http://localhost:8000`. Cada vez que guardes tu archivo `.md`, la presentación se actualizará de forma instantánea sin perder la diapositiva en la que estás.
 
 ---
 
-## 2. Componentes Especiales (Directivas de Bloque)
+## 3. 🏗️ Estructurando Diapositivas y Layouts
 
-### 2.1 KPI Grid (`:::kpi-grid`)
-**¿Qué hace?**
-Muestra métricas o indicadores clave (KPIs) en forma de cuadrícula de tarjetas de impacto.
-
-**Uso:**
-```markdown
-:::kpi-grid
-- [55M] Usuarios Activos {status: green}
-- [12ms] Latencia Media
-- [5%] Margen de Error {status: amber}
-- [Caída] Servidor B {status: critical}
-:::
-```
-
-### 2.2 Alert Boxes (`:::alert`)
-**¿Qué hace?**
-Despliega cajas de alerta para enfatizar advertencias, notas o información importante.
-
-**Uso:**
-Acepta colores (`red`, `amber`, `green`, `blue`), iconos custom, y un layout `horizontal` opcional.
-```markdown
-:::alert{type="red" icon="⚠️" layout="vertical"}
-**Cuidado:** Operación destructiva.
-:::
-
-:::alert{type="blue" icon="ℹ️" layout="horizontal"}
-- Primer punto horizontal
-- Segundo punto horizontal
-:::
-```
-
-### 2.3 Progress Bars (`:::progress-bars`)
-**¿Qué hace?**
-Muestra barras de progreso horizontales animadas.
-
-**Uso:**
-```markdown
-:::progress-bars
-- Fase de Diseño: 100% {color: secondary}
-- Fase de Desarrollo: 65% {color: primary}
-:::
-```
-
-### 2.4 Info Grid (`:::info-grid`)
-**¿Qué hace?**
-Muestra pares de Clave-Valor de forma elegante.
-
-**Uso:**
-```markdown
-:::info-grid
-- Base de Datos: PostgreSQL 15
-- Servidor: Ubuntu 22.04 LTS
-:::
-```
-
-### 2.5 Timeline (`:::timeline`)
-**¿Qué hace?**
-Dibuja una línea de tiempo para mostrar fases sucesivas de un proyecto.
-
-**Uso:**
-```markdown
-:::timeline
-- **Q1**: Análisis
-  - Toma de requerimientos
-  > Documento aprobado
-- **Q2**: Desarrollo
-  - Codificación
-  > Beta lista
-:::
-```
-
-### 2.6 Parallel Compare (`:::parallel-compare`)
-**¿Qué hace?**
-Muestra dos columnas frente a frente con un divisor central, útil para "Antes vs Después".
-
-**Uso:**
-```markdown
-:::parallel-compare{center-badge="VS"}
-### Legacy
-- Monolito
----
-### Moderno
-- Microservicios
-:::
-```
-
-### 2.7 Cards (`:::cards`)
-**¿Qué hace?**
-Genera una grilla de tarjetas semánticas avanzadas con íconos y contenido complejo.
-
-**Uso:**
-```markdown
-:::cards{cols="2"}
-::card{title="Frontend" icon="🖥️" color="primary"}
-- React
-- Vite
-::
-::card{title="Backend" icon="⚙️" color="secondary"}
-- FastAPI
-- Python
-::
-:::
-```
-
-### 2.8 Feature Grid (`:::feature-grid`)
-**¿Qué hace?**
-Crea una cuadrícula de características destacadas.
-
-**Uso:**
-```markdown
-:::feature-grid{cols="3"}
-- [⚡] Alta Velocidad {color: primary}
-- [🔒] Seguridad Extrema {color: secondary}
-- [☁️] Cloud Native
-:::
-```
+### El Lienzo Lógico 16:9 y el Auto-Escalado
+PresentMD trabaja sobre una resolución virtual rígida de **1280px x 720px**. Para evitar desbordamientos visuales, el motor ejecuta dos técnicas automáticas:
+1. **Escalado de Relación de Aspecto:** Escala todo el lienzo dinámicamente usando `transform: scale` para ajustarse perfectamente al tamaño del navegador (evitando barras de desplazamiento globales).
+2. **Auto-Ajuste de Tipografía (Fit-to-Screen):** Si el contenido vertical de una diapositiva es demasiado extenso, disminuye automáticamente el tamaño de la tipografía base para forzar que todo encaje en pantalla.
+   
+> [!IMPORTANT]
+> Para no romper el auto-escalado de fuentes, define márgenes, paddings y tamaños de tipografías personalizadas en tu CSS utilizando unidades relativas (`rem` o porcentajes), nunca píxeles fijos (`px`).
 
 ---
 
-## 3. Interactividad y Stepping
+### Los Diseños Estructurales (Layouts)
+Puedes forzar el comportamiento de la rejilla de una diapositiva usando la directiva `::layout{nombre}` al inicio de tu lámina:
 
-### 3.1 Listas Secuenciales (`:::steps`)
-**¿Qué hace?**
-Aparece los elementos de la lista uno a uno con cada pulsación de tecla/clic.
+#### 1. `::layout{title}`
+* **Cuándo usar:** Portadas de inicio, finales o separadores de grandes bloques.
+* **Estructura:** Centra vertical y horizontalmente todo el contenido sobre un fondo de alto contraste decorado con líneas de énfasis cromáticas.
 
-**Uso:**
+#### 2. `::layout{standard}`
+* **Cuándo usar:** La diapositiva diaria de viñetas, párrafos o diagramas.
+* **Estructura:** Organiza el contenido en una rejilla vertical de tres filas fijas (Cabecera, Cuerpo de Contenido y Pie de Diapositiva).
+
+#### 3. `::layout{scrollable}`
+* **Cuándo usar:** Tablas muy grandes, listados de auditoría extensos o diapositivas destinadas a anexos técnicos.
+* **Estructura:** Activa una barra de desplazamiento interno vertical en el cuerpo de la diapositiva para evitar que la información se corte.
+
+#### 4. `::layout{split-comparison}`
+* **Cuándo usar:** Para comparar en paralelo dos conceptos, productos o flujos técnicos.
+* **Estructura:** Divide la diapositiva en dos columnas laterales de contenido (`.pc-left` y `.pc-right`) y un divisor central (`.pc-center`).
+  * Usa el separador especial `|||` en una línea sola para marcar dónde termina la columna izquierda y comienza la derecha.
+  * Inyecta una medalla de contraste central que puedes renombrar agregando la propiedad `center_badge: "VS"` (o el texto que gustes) en el Frontmatter.
+
+---
+
+### Imágenes de Fondo
+Puedes añadir una imagen a toda la diapositiva usando la directiva `::bg-image` al inicio de la lámina:
+
+```markdown
+::bg-image{src="blueprint_bg.png" opacity="0.15"}
+```
+*(El motor incrustará la imagen en base64 de forma offline para asegurar la portabilidad total de la presentación).*
+
+---
+
+## 4. ✨ Animaciones y Flujo Secuencial (El Modo Presentador)
+
+### Code Stepping Animado (Depuración de Código en Vivo)
+Una de las funcionalidades más potentes para demostraciones de software es el resaltado secuencial de líneas de código. Puedes configurarlo usando llaves `{}` tras declarar el lenguaje de programación de tu bloque de código:
+
+```javascript {1|3-4|all}
+const presenter = "PresentMD";
+console.log("Iniciando modo presentador...");
+const init = () => {
+  return presenter.toLowerCase();
+};
+```
+
+* **`{1|3-4|all}`** le indica al motor lo siguiente:
+  * Al ingresar a la diapositiva, se resalta la línea `1` (el resto se atenúa).
+  * Al presionar *Avanzar*, se resalta el bloque de las líneas `3` a `4`.
+  * En el siguiente paso, se resaltan todas las líneas.
+
+---
+
+### Revelado Secuencial de Elementos (Steps)
+Para evitar que tu audiencia lea toda la diapositiva antes de que expliques cada punto, puedes agrupar elementos bajo el contenedor `:::steps`:
+
 ```markdown
 :::steps
-- Paso 1
-- Paso 2
-- Paso 3
+* **Paso 1:** Definir la estructura base en Markdown.
+* **Paso 2:** Lanzar el servidor en vivo de PresentMD.
+* **Paso 3:** Exportar a PDF en alta resolución.
 :::
 ```
 
-### 3.2 Layer Stack (`:::layer-stack`)
-**¿Qué hace?**
-Apila imágenes y las revela de forma secuencial.
+Cada viñeta o bloque interno se revelará secuencialmente cada vez que presiones la tecla *Avanzar*. 
+*(También puedes forzar este comportamiento en SmartArt utilizando el atributo `{steps="true"}` tras definir el nombre del componente).*
 
-**Uso:**
+---
+
+### Notas del Orador y Consola Dual
+Puedes guardar notas privadas para guiar tu discurso utilizando el contenedor `:::notes` al final de cualquier diapositiva:
+
 ```markdown
-:::layer-stack
-![Base](assets/base.png)
-![Capa 1](assets/capa1.png)
+# Arquitectura Cloud
+...
+:::notes
+Recordar hacer énfasis en el ahorro de costos del 35% de la infraestructura Serverless. No ahondar demasiado en los diagramas de VPC.
 :::
 ```
 
-### 3.3 Code Stepping Mágico
-**¿Qué hace?**
-Resalta secuencialmente líneas específicas en bloques de código.
+* **Consola de Presentador:** Presiona la tecla **`P`** en tu navegador. Se abrirá una ventana secundaria sincronizada que muestra una vista previa de la diapositiva actual, la siguiente lámina, un temporizador del tiempo transcurrido y tus notas del orador en tamaño legible.
 
-**Uso:**
+---
+
+## 5. 🎨 Dale Vida a tus Datos (Uso de Componentes y Colores)
+
+### KPI Grid (Indicadores Clave de Rendimiento)
+Inserta números impactantes y métricas de rendimiento en una cuadrícula con estados de color:
+
 ```markdown
-```python {1|2-3|all}
-def inicio():
-    x = 1
-    y = 2
-    return x + y
-```
-(Debe usarse con 3 backticks, aquí escapado por el formato)
-
-### 3.4 Hotspots (`:::hotspots`)
-**¿Qué hace?**
-Coloca pines interactivos sobre una imagen que revelan tooltips al tocarlos.
-
-**Uso:**
-```markdown
-:::hotspots{image="assets/mapa.png"}
-- [20%, 30%] **Motor**: Punto vital 1.
-- [80%, 50%] **Filtro**: Punto vital 2.
+:::kpi-grid
+- [120ms] Latencia Promedio {status: green}
+- [99.99%] Disponibilidad SLA {status: warning}
+- [0.02%] Tasa de Error {status: critical}
 :::
 ```
+*(Los estados `green`, `warning` y `critical` asignan colores semánticos de forma automática).*
 
-### 3.5 Spotlight (`:::spotlight`)
-**¿Qué hace?**
-Atenúa la diapositiva y resalta selectores CSS específicos de manera interactiva.
+---
 
-**Uso:**
+### Cajas de Alertas e Información (Alerts)
+Comunica advertencias, consejos o datos críticos:
+
 ```markdown
-:::spotlight
-- [#mi-id] Explicación de mi-id.
-- [.mi-clase] Explicación de mi-clase.
+:::alert{type="warning" icon="⚠️"}
+Cuidado con los Desbordamientos de Memoria
+Asegúrate de limpiar los listeners del `MutationObserver` en el desmontado del componente para evitar fugas de recursos.
+:::
+```
+* **Alertas Horizontales:** Si quieres una lista en línea, usa `layout="horizontal"` y viñetas internas:
+```markdown
+:::alert{type="success" icon="🚀" layout="horizontal"}
+- Lanzamiento Exitoso
+- Pipeline Verde
+- Despliegue Completado
 :::
 ```
 
 ---
 
-## 4. Contenido Técnico y Markdown Estándar
+### El Sistema de Colores Universales (`data-color`)
+Todos los diagramas y cajas de PresentMD utilizan un selector de color abstracto del `1` al `6` que respeta la paleta cromática del tema de diseño seleccionado:
 
-### 4.1 Bloques de Código Estáticos
-**¿Qué hace?**
-Muestra código con resaltado de sintaxis y líneas resaltadas fijas.
-
-**Uso:**
 ```markdown
-```json {2,4}
-{
-  "clave": "valor",
-  "otro": "dato"
-}
+:::progress-bars
+- Backend API: 85% {color: 1}
+- Frontend UI: 92% {color: 2}
+- Infraestructura: 100% {color: 3}
+:::
 ```
 
-### 4.2 Diagramas (Mermaid)
-**¿Qué hace?**
-Renderiza diagramas de flujo y secuencias a SVG vectorial.
-
-**Uso:**
-```markdown
-```mermaid
-graph TD;
-    A-->B;
-```
-```
-
-### 4.3 Tablas Markdown
-**¿Qué hace?**
-Dibuja tablas clásicas.
-
-**Uso:**
-```markdown
-| Col 1 | Col 2 |
-|-------|-------|
-| Val 1 | Val 2 |
-```
-
-### 4.4 Blockquotes
-**¿Qué hace?**
-Destaca citas importantes.
-
-**Uso:**
-```markdown
-> "Este es un mensaje clave."
-```
+Esto te permite cambiar por completo el tema de color visual (`theme: obsidian-glass` por `theme: nexus-blueprint`) en el Frontmatter, y la presentación adaptará todos sus componentes gráficos automáticamente para mantener la armonía.
 
 ---
 
-## 5. Elementos Inline
+## 6. 🗺️ Cheat Sheet (Atajos de Teclado y Comandos Rápidos)
 
-### 5.1 Badges
-**¿Qué hace?**
-Inserta etiquetas pequeñas de estado en medio del texto.
+Presiona estos atajos en tu teclado cuando estés visualizando la presentación para activar herramientas de apoyo en el escenario:
 
-**Uso:**
-```markdown
-El servidor está [ONLINE]{.badge-green}.
-```
-
-### 5.2 Resaltado Natural (Mark)
-**¿Qué hace?**
-Marca con estilo "destacador" el texto.
-
-**Uso:**
-```markdown
-Esto es ==muy importante==.
-```
-
-### 5.3 Navegación Dinámica a Anexos
-**¿Qué hace?**
-Permite navegar no linealmente. Puedes asignar un ID a un slide anexo y enlazarlo.
-
-**Uso:**
-Slide de Origen:
-```markdown
-Ver [Anexo A](#anexo-a){.link-anexo}
-```
-
-Slide de Destino (al final del documento):
-```markdown
-::layout{annex}
-## Anexo A {#anexo-a}
-
-<button class="btn-volver">Volver</button>
-```
-
----
-
-## 6. Funcionalidades del Reproductor (UI)
-
-- **Menú Lateral Desplegable**: Acerca el cursor al borde izquierdo de la pantalla. Agrupa anexos automáticamente.
-- **Transiciones Cinemáticas**: View Transitions API interpola las vistas.
-- **Auto-Escalado (Fit-to-Screen)**: Ajusta la fuente para evitar desbordamientos.
-- **Herramientas de Presentador Vivo**: Presiona `L` para láser, `D` para dibujar, `C` para limpiar.
-- **Pantalla Completa**: Presiona `F` o haz clic en el icono inferior derecho.
-
-### 6.1 Modo Presentador de Doble Ventana Offline
-Presionando la tecla `p` o `P` (o pulsando el icono del profesor 👨‍🏫 en la barra de controles), se abre una ventana secundaria optimizada como consola de presentador:
-- **Slide Actual + Notas**: Renderiza una versión a escala del slide actual con las notas del presentador legibles en la parte inferior.
-- **Siguiente Slide + Reloj/Cronómetro**: Permite ver qué diapositiva viene después, la hora actual del sistema y cronometrar el tiempo transcurrido (con botón de reinicio).
-- **Sincronización Total Offline**: Funciona sin conectividad mediante `localStorage` y `postMessage`. Al avanzar diapositivas o interactuar en cualquiera de las dos ventanas, la otra se actualiza instantáneamente.
-
----
-
-## 7. Exportación y CLI
-
-El CLI de PresentMD provee los siguientes comandos:
-
-- `presentmd build archivo.md`: Construye un HTML autocontenido (con base64 o copia de assets en `/output`).
-- `presentmd build archivo.md -f pdf`: Exporta directamente a PDF (requiere Chromium/Playwright).
-- `presentmd serve archivo.md`: Servidor local con Live-Reload.
-- `presentmd debug archivo.md`: Muestra el AST (Árbol de Sintaxis Abstracta) parseado en consola.
-- `presentmd doctor`: Realiza un diagnóstico completo de dependencias locales (Python, D2, Mermaid CLI, Playwright y Chromium) para confirmar que el entorno esté correctamente configurado.
+| Tecla / Atajo | Acción Realizada |
+| :--- | :--- |
+| **`Flecha Derecha`** / **`Espacio`** / **`PageDown`** | Siguiente paso de animación / Siguiente diapositiva |
+| **`Flecha Izquierda`** / **`PageUp`** | Paso de animación anterior / Diapositiva anterior |
+| **`P`** | Abre o cierra la Consola del Presentador (pantalla dual sincronizada) |
+| **`T`** / **`Esc`** | Abre o cierra el menú lateral de Tabla de Contenidos (TOC) |
+| **`F`** | Alterna el modo Pantalla Completa |
+| **`L`** | Activa/Desactiva el cursor de puntero láser virtual |
+| **`D`** | Activa/Desactiva el Lienzo de Dibujo Libre para pintar sobre las diapositivas |
+| **`C`** | Limpia todos los trazos dibujados en la diapositiva actual |
+| **`Home`** | Salta a la primera diapositiva de la presentación |
+| **`End`** | Salta a la última diapositiva útil (excluyendo anexos de datos) |
+| **`Esc`** | Cierra cualquier vista de ampliación de diagramas activa (Lightbox) |
